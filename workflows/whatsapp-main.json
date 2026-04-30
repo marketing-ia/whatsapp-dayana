@@ -57,6 +57,51 @@
                 "type": "string",
                 "operation": "notContains"
               }
+            },
+            {
+              "id": "c4",
+              "leftValue": "={{ $json.body.data.key.remoteJid }}",
+              "rightValue": "@broadcast",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "c5",
+              "leftValue": "={{ $json.body.data.key.remoteJid }}",
+              "rightValue": "newsletter",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "c6",
+              "leftValue": "={{ $json.body.data.messageType }}",
+              "rightValue": "protocolMessage",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            },
+            {
+              "id": "c7",
+              "leftValue": "={{ $json.body.data.messageType }}",
+              "rightValue": "reactionMessage",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            },
+            {
+              "id": "c8",
+              "leftValue": "={{ $json.body.data.messageType }}",
+              "rightValue": "senderKeyDistributionMessage",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
             }
           ],
           "combinator": "and"
@@ -1409,7 +1454,7 @@
       ],
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "const phone = $('Extraer datos').item.json.phone;\nconst pushName = $('Extraer datos').item.json.pushName || 'Cliente';\nconst reservarInfo = $('Extraer respuesta AI').item.json.reservarInfo || '';\nconst reagendarInfo = $('Extraer respuesta AI').item.json.reagendarInfo || '';\nconst cancelarRequested = $('Extraer respuesta AI').item.json.cancelarRequested || false;\nconst EVO_HOST = 'n8n-evolution-api.78s07r.easypanel.host';\nconst EVO_INSTANCE = 'Dayana%20Munoz';\nconst evoUrl = 'https://' + EVO_HOST + '/message/sendText/' + EVO_INSTANCE;\nconst base = { phone, pushName, evoUrl, ghlLocationId: 'IYslAlpLthyYmzorDhnP', ghlCalendarId: 'xyMoZ5iLareyhwQNijO5', royPhone: '16155467023' };\n\n// CANCELAR\nif (cancelarRequested) return [{ json: { ...base, action: 'cancelar' } }];\n\n// Helper: parse date\nconst parseDateTime = (info) => {\n  if (!info || !info.includes('T')) return null;\n  const [datePart, timePart] = info.split('T');\n  const [year, month, day] = datePart.split('-').map(Number);\n  const [hour, minute] = (timePart || '09:00').split(':').map(Number);\n  const startUTC = new Date(Date.UTC(year, month-1, day, hour+4, minute));\n  const endUTC = new Date(startUTC.getTime() + 3600000);\n  const MONTHS = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];\n  const DAYS = ['domingo','lunes','martes','miercoles','jueves','viernes','sabado'];\n  const dateObj = new Date(Date.UTC(year, month-1, day));\n  const ampm = hour < 12 ? 'AM' : 'PM';\n  const h12 = hour%12||12;\n  const dateStr = DAYS[dateObj.getUTCDay()]+' '+day+' de '+MONTHS[month-1]+' a las '+h12+':'+String(minute).padStart(2,'0')+' '+ampm+' ET';\n  return { startTime: startUTC.toISOString(), endTime: endUTC.toISOString(), dateStr };\n};\n\n// REAGENDAR\nif (reagendarInfo) {\n  const parsed = parseDateTime(reagendarInfo);\n  if (parsed) return [{ json: { ...base, action: 'reagendar', ...parsed, apptTitle: 'Cita reagendada - '+pushName } }];\n}\n\n// NUEVA CITA / LINK\nif (!reservarInfo || !reservarInfo.includes('T')) {\n  return [{ json: { ...base, action: 'link', ghlCalendarId: 'xyMoZ5iLareyhwQNijO5' } }];\n}\n\nconst parsed = parseDateTime(reservarInfo);\nif (!parsed) return [{ json: { ...base, action: 'link' } }];\nreturn [{ json: { ...base, action: 'cita', ...parsed, apptTitle: 'Cita con '+pushName } }];"
+        "jsCode": "const phone = $('Extraer datos').item.json.phone;\nconst pushName = $('Extraer datos').item.json.pushName || 'Cliente';\nconst reservarInfo = $('Extraer respuesta AI').item.json.reservarInfo || '';\nconst reagendarInfo = $('Extraer respuesta AI').item.json.reagendarInfo || '';\nconst cancelarRequested = $('Extraer respuesta AI').item.json.cancelarRequested || false;\nconst EVO_HOST = 'n8n-evolution-api.78s07r.easypanel.host';\nconst EVO_INSTANCE = 'Dayana%20Munoz';\nconst evoUrl = 'https://' + EVO_HOST + '/message/sendText/' + EVO_INSTANCE;\nconst base = { phone, pushName, evoUrl, ghlLocationId: 'IYslAlpLthyYmzorDhnP', ghlCalendarId: 'xyMoZ5iLareyhwQNijO5', royPhone: '16155467023' };\n\n// CANCELAR\nif (cancelarRequested) return [{ json: { ...base, action: 'cancelar' } }];\n\n// Helper: parse date\nconst parseDateTime = (info) => {\n  if (!info || !info.includes('T')) return null;\n  const [datePart, timePart] = info.split('T');\n  const [year, month, day] = datePart.split('-').map(Number);\n  const [hour, minute] = (timePart || '09:00').split(':').map(Number);\n    // Dynamic ET offset: EDT=UTC-4 (Mar 2nd Sun → Nov 1st Sun), EST=UTC-5\n  const _dstStart = new Date(year, 2, 1); _dstStart.setDate(1 + (7 - _dstStart.getDay() + 0) % 7 + 7);\n  const _dstEnd   = new Date(year, 10, 1); _dstEnd.setDate(1 + (7 - _dstEnd.getDay()) % 7);\n  const _etOffset = (new Date(year, month-1, day) >= _dstStart && new Date(year, month-1, day) < _dstEnd) ? 4 : 5;\n  const startUTC = new Date(Date.UTC(year, month-1, day, hour + _etOffset, minute));\n  const endUTC = new Date(startUTC.getTime() + 3600000);\n  const MONTHS = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];\n  const DAYS = ['domingo','lunes','martes','miercoles','jueves','viernes','sabado'];\n  const dateObj = new Date(Date.UTC(year, month-1, day));\n  const ampm = hour < 12 ? 'AM' : 'PM';\n  const h12 = hour%12||12;\n  const dateStr = DAYS[dateObj.getUTCDay()]+' '+day+' de '+MONTHS[month-1]+' a las '+h12+':'+String(minute).padStart(2,'0')+' '+ampm+' ET';\n  return { startTime: startUTC.toISOString(), endTime: endUTC.toISOString(), dateStr };\n};\n\n// REAGENDAR\nif (reagendarInfo) {\n  const parsed = parseDateTime(reagendarInfo);\n  if (parsed) return [{ json: { ...base, action: 'reagendar', ...parsed, apptTitle: 'Cita reagendada - '+pushName } }];\n}\n\n// NUEVA CITA / LINK\nif (!reservarInfo || !reservarInfo.includes('T')) {\n  return [{ json: { ...base, action: 'link', ghlCalendarId: 'xyMoZ5iLareyhwQNijO5' } }];\n}\n\nconst parsed = parseDateTime(reservarInfo);\nif (!parsed) return [{ json: { ...base, action: 'link' } }];\nreturn [{ json: { ...base, action: 'cita', ...parsed, apptTitle: 'Cita con '+pushName } }];"
       }
     },
     {
