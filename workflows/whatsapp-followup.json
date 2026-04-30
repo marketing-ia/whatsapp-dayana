@@ -1,0 +1,260 @@
+﻿{
+  "id": "l6quKWT0lnbiT8Hn",
+  "name": "osiris-whatsapp-followup",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 2
+            }
+          ]
+        }
+      },
+      "id": "node-schedule",
+      "name": "Cada 2 horas",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        200,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://services.leadconnectorhq.com/contacts/?locationId=IYslAlpLthyYmzorDhnP&limit=100",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Version",
+              "value": "2021-07-28"
+            }
+          ]
+        },
+        "options": {},
+        "continueOnFail": true,
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "id": "node-get-contacts",
+      "name": "Obtener contactos GHL",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        420,
+        400
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "5CtmPWCM6A10Sjo1",
+          "name": "GoHighLevel — Dayana Munoz"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const now = Date.now();\nconst utcHour = new Date().getUTCHours();\nconst etHour = (utcHour - 4 + 24) % 24;\nif (etHour < 8 || etHour >= 21) return [{ json: { noFollowups: true, reason: 'outside_hours' } }];\nconst h24 = 24 * 60 * 60 * 1000;\nconst h48 = 48 * 60 * 60 * 1000;\nconst buffer = 2.5 * 60 * 60 * 1000;\n\nconst contacts = items[0].json.contacts || [];\nconst result = [];\nconst seenPhones = new Set();\n\nfor (const c of contacts) {\n  const rawPhone = (c.phone || '').replace(/\\D/g, '');\n  if (!rawPhone) continue;\n  if (seenPhones.has(rawPhone)) continue;\n  seenPhones.add(rawPhone);\n  const tags = c.tags || [];\n  if (!tags.includes('whatsapp-lead')) continue;\n  // Skip contacts that sent STOP or were escalated to human\n  if (tags.includes('lucy-paused') || tags.includes('do-not-contact')) continue;\n  const age = now - new Date(c.dateAdded).getTime();\n\n  // 24h follow-up: lead antiguo 24h, sin seguimiento previo\n  if (age >= h24 && age < h24 + buffer && !tags.includes('followup-24h')) {\n    result.push({\n      json: {\n        contactId: c.id,\n        phone: rawPhone,\n        name: c.firstName || 'amigo',\n        followupType: '24h',\n        currentTags: tags\n      }\n    });\n  }\n  // 48h follow-up: ya recibio el de 24h pero no respondio\n  else if (age >= h48 && age < h48 + buffer && tags.includes('followup-24h') && !tags.includes('followup-48h')) {\n    result.push({\n      json: {\n        contactId: c.id,\n        phone: rawPhone,\n        name: c.firstName || 'amigo',\n        followupType: '48h',\n        currentTags: tags\n      }\n    });\n  }\n}\n\nif (result.length === 0) return [{ json: { noFollowups: true } }];\nreturn result;",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "node-classify",
+      "name": "Clasificar seguimientos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        640,
+        400
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ String($json.noFollowups) }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "node-has-followups",
+      "name": "Hay seguimientos?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        860,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://n8n-evolution-api.78s07r.easypanel.host/message/sendText/Dayana%20Munoz",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ number: $json.phone, text: $json.followupType === '24h' ? 'Hola ' + $json.name + '! 👋 Soy Andrea, asistente de Dayana Muñoz - Dayana Finance.\\n\\nQuería saber si tienes alguna pregunta sobre plan de protección familiar o finanzas personales. Estamos aquí para ayudarte. 😊\\n\\n¿En qué te puedo servir?' : 'Hola ' + $json.name + '! 😊 Solo paso a recordarte que Dayana tiene espacios disponibles para una consulta GRATUITA esta semana.\\n\\nPuedes reservar aquí 👇\\nhttps://api.leadconnectorhq.com/widget/booking/xyMoZ5iLareyhwQNijO5\\n\\nSin compromisos — solo una conversación de valor. 🙌' }) }}",
+        "options": {},
+        "continueOnFail": true,
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "id": "node-send-followup",
+      "name": "Enviar seguimiento WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1080,
+        280
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "hz8DtXPnIaPqwCkl",
+          "name": "Evolution API — Dayana Munoz"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://services.leadconnectorhq.com/contacts/{{ $('Clasificar seguimientos').item.json.contactId }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Version",
+              "value": "2021-07-28"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ tags: [...new Set([...$('Clasificar seguimientos').item.json.currentTags, $('Clasificar seguimientos').item.json.followupType === '24h' ? 'followup-24h' : 'followup-48h'])] }) }}",
+        "options": {},
+        "continueOnFail": true,
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "id": "node-update-ghl",
+      "name": "Actualizar tag GHL",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1300,
+        280
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "5CtmPWCM6A10Sjo1",
+          "name": "GoHighLevel — Dayana Munoz"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Cada 2 horas": {
+      "main": [
+        [
+          {
+            "node": "Obtener contactos GHL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obtener contactos GHL": {
+      "main": [
+        [
+          {
+            "node": "Clasificar seguimientos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clasificar seguimientos": {
+      "main": [
+        [
+          {
+            "node": "Hay seguimientos?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hay seguimientos?": {
+      "main": [
+        [
+          {
+            "node": "Enviar seguimiento WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Enviar seguimiento WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Actualizar tag GHL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "staticData": {
+    "node:Cada 2 horas": {
+      "recurrenceRules": [
+        14
+      ]
+    }
+  },
+  "meta": null,
+  "pinData": null,
+  "versionId": "2836f2c3-aa3d-4ed8-b396-6bcd7551cfe0",
+  "tags": []
+}
+

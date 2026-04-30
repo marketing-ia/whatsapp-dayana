@@ -1,0 +1,199 @@
+{
+  "id": "ghl-to-whatsapp-dayana",
+  "name": "ghl-to-whatsapp-dayana",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "node-ghl-webhook",
+      "name": "GHL Webhook Entrada",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [200, 400],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ghl-to-whatsapp-dayana",
+        "responseMode": "lastNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "node-filter-agent",
+      "name": "Es respuesta de agente?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [420, 400],
+      "parameters": {
+        "conditions": {
+          "options": { "version": 2, "leftValue": "", "caseSensitive": true, "typeValidation": "loose" },
+          "conditions": [
+            {
+              "id": "fa1",
+              "leftValue": "={{ $json.body?.direction || $json.body?.messageDirection || '' }}",
+              "rightValue": "outbound",
+              "operator": { "type": "string", "operation": "equals" }
+            },
+            {
+              "id": "fa2",
+              "leftValue": "={{ String($json.body?.message || '').startsWith('[Andrea IA]') }}",
+              "rightValue": "true",
+              "operator": { "type": "string", "operation": "notEquals" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "node-get-contact",
+      "name": "Obtener contacto GHL",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [640, 280],
+      "continueOnFail": true,
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const body = $input.first().json.body || $input.first().json;\nconst contactId = body.contactId || body.contact_id || '';\nconst messageText = body.message || body.body || body.text || '';\nconst conversationId = body.conversationId || body.conversation_id || '';\n\nif (!contactId) return [{ json: { error: 'no_contact_id', body } }];\n\nconst GHL_KEY = 'pit-b467b97c-de3a-4321-bb0f-e9f09c380faf';\nconst H = { 'Authorization': `Bearer ${GHL_KEY}`, 'Version': '2021-07-28' };\n\ntry {\n  const resp = await fetch(`https://services.leadconnectorhq.com/contacts/${contactId}`, { method: 'GET', headers: H });\n  const data = await resp.json();\n  const contact = data.contact || data;\n  const phone = (contact.phone || '').replace(/\\D/g, '').replace(/^1/, '');\n  return [{ json: { phone, contactId, messageText, conversationId, contactName: contact.firstName || '' } }];\n} catch(e) {\n  return [{ json: { error: e.message, contactId } }];\n}"
+      }
+    },
+    {
+      "id": "node-has-phone",
+      "name": "Tiene telefono?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [860, 280],
+      "parameters": {
+        "conditions": {
+          "options": { "version": 2, "leftValue": "", "caseSensitive": true, "typeValidation": "loose" },
+          "conditions": [
+            {
+              "id": "hp1",
+              "leftValue": "={{ $json.phone }}",
+              "rightValue": "",
+              "operator": { "type": "string", "operation": "notEquals" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "node-send-to-whatsapp",
+      "name": "Enviar a WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1080, 180],
+      "continueOnFail": true,
+      "parameters": {
+        "method": "POST",
+        "url": "https://n8n-evolution-api.78s07r.easypanel.host/message/sendText/Dayana%20Munoz",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ number: $json.phone, text: $json.messageText }) }}",
+        "options": {},
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "hz8DtXPnIaPqwCkl",
+          "name": "Evolution API — Dayana Munoz"
+        }
+      }
+    },
+    {
+      "id": "node-pause-bot",
+      "name": "Pausar bot para este contacto",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1300, 180],
+      "continueOnFail": true,
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://services.leadconnectorhq.com/contacts/{{ $('Obtener contacto GHL').item.json.contactId }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Version", "value": "2021-07-28" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ tags: ['lucy-paused'] }) }}",
+        "options": {},
+        "continueOnFail": true,
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "5CtmPWCM6A10Sjo1",
+          "name": "GoHighLevel — Dayana Munoz"
+        }
+      }
+    },
+    {
+      "id": "node-respond-ok",
+      "name": "Responder OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1520, 180],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ ok: true }) }}"
+      }
+    },
+    {
+      "id": "node-respond-skip",
+      "name": "Responder skip",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [640, 500],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ ok: true, skipped: true }) }}"
+      }
+    }
+  ],
+  "connections": {
+    "GHL Webhook Entrada": {
+      "main": [[{ "node": "Es respuesta de agente?", "type": "main", "index": 0 }]]
+    },
+    "Es respuesta de agente?": {
+      "main": [
+        [{ "node": "Obtener contacto GHL", "type": "main", "index": 0 }],
+        [{ "node": "Responder skip", "type": "main", "index": 0 }]
+      ]
+    },
+    "Obtener contacto GHL": {
+      "main": [[{ "node": "Tiene telefono?", "type": "main", "index": 0 }]]
+    },
+    "Tiene telefono?": {
+      "main": [
+        [{ "node": "Enviar a WhatsApp", "type": "main", "index": 0 }],
+        [{ "node": "Responder skip", "type": "main", "index": 0 }]
+      ]
+    },
+    "Enviar a WhatsApp": {
+      "main": [[{ "node": "Pausar bot para este contacto", "type": "main", "index": 0 }]]
+    },
+    "Pausar bot para este contacto": {
+      "main": [[{ "node": "Responder OK", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "staticData": null,
+  "meta": null,
+  "pinData": null,
+  "versionId": "dayana-ghl-to-wa-v1",
+  "tags": []
+}

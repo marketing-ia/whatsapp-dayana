@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "n8n-mcp": {
+      "command": "npx",
+      "args": ["-y", "n8n-mcp"],
+      "env": {
+        "N8N_API_URL": "https://n8n-n8n.78s07r.easypanel.host/api/v1",
+        "N8N_API_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhMmMwMmYwZi05ZjBkLTRjMzMtOTBiYS1mZTk1ZTcxMzA5YzIiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwianRpIjoiMzU5ZmZlMTItYjU0My00OGRjLWIxODItYmMxNDEwYWUzOWQ0IiwiaWF0IjoxNzc3NTE2MzQ3fQ.7x4MfmtFEqNKzdf6E3oQfSA-eMlG5W_12DajSuSXeqg"
+      }
+    }
+  }
+}
