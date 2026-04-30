@@ -1,6 +1,6 @@
 ﻿{
-  "id": "l6quKWT0lnbiT8Hn",
-  "name": "osiris-whatsapp-followup",
+  "id": "dYnFollowup2026xCD",
+  "name": "dayana-whatsapp-followup",
   "active": true,
   "isArchived": false,
   "nodes": [
@@ -52,7 +52,7 @@
       ],
       "credentials": {
         "httpHeaderAuth": {
-          "id": "5CtmPWCM6A10Sjo1",
+          "id": "dYnGhlDayana0001x",
           "name": "GoHighLevel — Dayana Munoz"
         }
       }
@@ -136,7 +136,7 @@
       ],
       "credentials": {
         "httpHeaderAuth": {
-          "id": "hz8DtXPnIaPqwCkl",
+          "id": "dYnEvoApiDayana01",
           "name": "Evolution API — Dayana Munoz"
         }
       }
@@ -176,7 +176,7 @@
       ],
       "credentials": {
         "httpHeaderAuth": {
-          "id": "5CtmPWCM6A10Sjo1",
+          "id": "dYnGhlDayana0001x",
           "name": "GoHighLevel — Dayana Munoz"
         }
       }
@@ -257,4 +257,5 @@
   "versionId": "2836f2c3-aa3d-4ed8-b396-6bcd7551cfe0",
   "tags": []
 }
+
 
