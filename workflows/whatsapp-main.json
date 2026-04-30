@@ -666,7 +666,7 @@
         "genericAuthType": "httpHeaderAuth"
       },
       "id": "node-notify-osiris",
-      "name": "Notificar a Osiris",
+      "name": "Notificar a Dayana",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
@@ -930,7 +930,7 @@
         "genericAuthType": "httpHeaderAuth"
       },
       "id": "node-assign-chatwoot",
-      "name": "Asignar a Osiris (Chatwoot)",
+      "name": "Asignar a Dayana (Chatwoot)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
@@ -967,7 +967,7 @@
         "genericAuthType": "httpHeaderAuth"
       },
       "id": "node-notify-human",
-      "name": "Notificar Osiris (humano)",
+      "name": "Notificar Dayana (humano)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
@@ -1174,7 +1174,7 @@
     },
     {
       "id": "node-cmd-confirm",
-      "name": "Confirmar comando a Roy",
+      "name": "Confirmar comando a Dayana",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
       "position": [
@@ -1279,7 +1279,7 @@
     },
     {
       "id": "node-twilio-call",
-      "name": "Twilio Llamar a Roy",
+      "name": "Twilio Llamar a Dayana",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
@@ -1763,7 +1763,7 @@
     },
     {
       "id": "node-roy-cmd-filter",
-      "name": "¿Comando de Roy?",
+      "name": "¿Comando de Dayana?",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
@@ -1987,14 +1987,14 @@
         ],
         [
           {
-            "node": "¿Comando de Roy?",
+            "node": "¿Comando de Dayana?",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "¿Comando de Roy?": {
+    "¿Comando de Dayana?": {
       "main": [
         [
           {
@@ -2136,7 +2136,7 @@
       "main": [
         [
           {
-            "node": "Notificar a Osiris",
+            "node": "Notificar a Dayana",
             "type": "main",
             "index": 0
           },
@@ -2146,7 +2146,7 @@
             "index": 0
           },
           {
-            "node": "Twilio Llamar a Roy",
+            "node": "Twilio Llamar a Dayana",
             "type": "main",
             "index": 0
           }
@@ -2220,12 +2220,12 @@
       "main": [
         [
           {
-            "node": "Asignar a Osiris (Chatwoot)",
+            "node": "Asignar a Dayana (Chatwoot)",
             "type": "main",
             "index": 0
           },
           {
-            "node": "Notificar Osiris (humano)",
+            "node": "Notificar Dayana (humano)",
             "type": "main",
             "index": 0
           },
@@ -2270,7 +2270,7 @@
       "main": [
         [
           {
-            "node": "Confirmar comando a Roy",
+            "node": "Confirmar comando a Dayana",
             "type": "main",
             "index": 0
           }
