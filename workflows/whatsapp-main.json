@@ -367,7 +367,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const GHL_KEY = 'pit-b467b97c-de3a-4321-bb0f-e9f09c380faf';\nconst calendarId = 'xyMoZ5iLareyhwQNijO5';\n\nconst now = new Date();\nconst start = new Date(now);\nstart.setHours(0, 0, 0, 0);\nconst end = new Date(start);\nend.setDate(end.getDate() + 7);\n\nconst DAYS = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];\nconst MONTHS = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];\n\nlet slotsText = '';\ntry {\n  const resp = await fetch(\n    'https://services.leadconnectorhq.com/calendars/' + calendarId + '/free-slots?startDate=' + start.getTime() + '&endDate=' + end.getTime() + '&timezone=America/New_York',\n    { method: 'GET', headers: { 'Authorization': 'Bearer ' + GHL_KEY, 'Version': '2021-07-28' } }\n  );\n  const data = await resp.json();\n  const slots = [];\n  if (data && typeof data === 'object') {\n    // GHL returns slots grouped by date key\n    Object.values(data).forEach(daySlots => {\n      if (Array.isArray(daySlots)) daySlots.forEach(s => slots.push(s.time || s.startTime || s));\n    });\n  }\n  if (slots.length > 0) {\n    const seen = new Set();\n    const lines = [];\n    for (const slot of slots) {\n      if (lines.length >= 9) break;\n      const d = new Date(slot);\n      if (isNaN(d.getTime())) continue;\n      const h = d.getHours();\n      const m = d.getMinutes();\n      const ampm = h < 12 ? 'AM' : 'PM';\n      const h12 = h % 12 || 12;\n      const label = DAYS[d.getDay()] + ' ' + d.getDate() + ' de ' + MONTHS[d.getMonth()] + ' a las ' + h12 + ':' + String(m).padStart(2,'0') + ' ' + ampm + ' ET';\n      if (!seen.has(label)) { seen.add(label); lines.push(label); }\n    }\n    if (lines.length > 0) slotsText = lines.join('\\n');\n  }\n} catch(e) {}\n\nif (!slotsText) slotsText = 'No se pudo consultar disponibilidad. Usa horarios generales: lunes a viernes 8am-6pm ET.';\n\nreturn [{ json: { ...$input.first().json, availableSlots: slotsText } }];\n"
+        "jsCode": "const GHL_KEY = 'pit-b467b97c-de3a-4321-bb0f-e9f09c380faf';\nconst calendarId = 'xyMoZ5iLareyhwQNijO5';\n\nconst now = new Date();\nconst start = new Date(now);\nstart.setHours(0, 0, 0, 0);\nconst end = new Date(start);\nend.setDate(end.getDate() + 7);\n\nconst DAYS = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];\nconst MONTHS = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];\n\nlet slotsText = '';\ntry {\n  const ghlData = await $helpers.httpRequest({\n    method: 'GET',\n    url: 'https://services.leadconnectorhq.com/calendars/' + calendarId + '/free-slots',\n    qs: {\n      startDate: start.getTime(),\n      endDate: end.getTime(),\n      timezone: 'America/New_York'\n    },\n    headers: {\n      'Authorization': 'Bearer ' + GHL_KEY,\n      'Version': '2021-07-28'\n    }\n  });\n\n  const slots = [];\n  if (ghlData && typeof ghlData === 'object') {\n    Object.entries(ghlData).forEach(([key, dayData]) => {\n      if (key === 'traceId' || !dayData || typeof dayData !== 'object') return;\n      // GHL returns { \"YYYY-MM-DD\": { \"slots\": [\"2026-05-01T12:00:00-04:00\", ...] } }\n      const daySlots = dayData.slots || (Array.isArray(dayData) ? dayData : []);\n      daySlots.forEach(s => slots.push(s));\n    });\n  }\n\n  if (slots.length > 0) {\n    const seen = new Set();\n    const lines = [];\n    for (const slot of slots) {\n      if (lines.length >= 9) break;\n      // Parse directly from slot string (already in ET: \"2026-05-01T12:00:00-04:00\")\n      const tIdx = slot.indexOf('T');\n      if (tIdx === -1) continue;\n      const datePart = slot.substring(0, tIdx);\n      const timePart = slot.substring(tIdx + 1).replace(/[+-]\\d{2}:\\d{2}$/, '').replace('Z', '');\n      const [yStr, mStr, dStr] = datePart.split('-');\n      const [hStr, minStr] = timePart.split(':');\n      const year = parseInt(yStr, 10);\n      const month = parseInt(mStr, 10) - 1;\n      const day = parseInt(dStr, 10);\n      const h = parseInt(hStr, 10);\n      const min = parseInt(minStr, 10);\n      const d = new Date(year, month, day);\n      const ampm = h < 12 ? 'AM' : 'PM';\n      const h12 = h % 12 || 12;\n      const label = DAYS[d.getDay()] + ' ' + day + ' de ' + MONTHS[month] + ' a las ' + h12 + ':' + String(min).padStart(2,'0') + ' ' + ampm + ' ET';\n      if (!seen.has(label)) { seen.add(label); lines.push(label); }\n    }\n    if (lines.length > 0) slotsText = lines.join('\\n');\n  }\n} catch(e) {}\n\nif (!slotsText) slotsText = 'No se pudo consultar disponibilidad. Usa horarios generales: lunes a viernes 8am-6pm ET.';\n\nreturn [{ json: { ...$input.first().json, availableSlots: slotsText } }];\n"
       },
       "id": "node-ghl-slots",
       "name": "Disponibilidad GHL",
@@ -1501,7 +1501,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const ghlResp = $input.first().json;\nconst p = $('Parsear cita').item.json;\nconst contact = ghlResp.contacts && ghlResp.contacts[0];\nconst contactId = contact ? contact.id : '';\n\nreturn [{ json: {\n  contactId,\n  phone: p.phone, pushName: p.pushName, dateStr: p.dateStr,\n  startTime: p.startTime, endTime: p.endTime,\n  ghlLocationId: p.ghlLocationId, ghlCalendarId: p.ghlCalendarId,\n  apptTitle: p.apptTitle, evoUrl: p.evoUrl, royPhone: p.royPhone\n}}];"
+        "jsCode": "const ghlResp = $input.first().json;\nconst p = $('Parsear cita').item.json;\nconst contact = ghlResp.contacts && ghlResp.contacts[0];\nconst contactId = contact ? contact.id : '';\nconst contactEmail = contact ? (contact.email || '') : '';\n\nreturn [{ json: {\n  contactId,\n  contactEmail,\n  phone: p.phone, pushName: p.pushName, dateStr: p.dateStr,\n  startTime: p.startTime, endTime: p.endTime,\n  ghlLocationId: p.ghlLocationId, ghlCalendarId: p.ghlCalendarId,\n  apptTitle: p.apptTitle, evoUrl: p.evoUrl, royPhone: p.royPhone\n}}];"
       },
       "id": "node-extraer-contacto-id",
       "name": "Extraer contacto ID",
@@ -1533,7 +1533,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ calendarId: $json.ghlCalendarId, locationId: $json.ghlLocationId, contactId: $json.contactId, startTime: $json.startTime, endTime: $json.endTime, title: $json.apptTitle, appointmentStatus: 'confirmed' }) }}",
+        "jsonBody": "={{ JSON.stringify({ calendarId: $json.ghlCalendarId, locationId: $json.ghlLocationId, contactId: $json.contactId, startTime: $json.startTime, endTime: $json.endTime, title: $json.apptTitle, appointmentStatus: 'confirmed', toNotify: true }) }}",
         "options": {}
       },
       "id": "node-ghl-crear-cita",
@@ -1636,7 +1636,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ number: $('Extraer contacto ID').item.json.phone, text: 'Listo! Tu cita esta confirmada para el ' + $('Extraer contacto ID').item.json.dateStr + '\\nTienes alguna pregunta?' }) }}",
+        "jsonBody": "={{ JSON.stringify({ number: $('Extraer contacto ID').item.json.phone, text: '✅ Listo, ' + $('Extraer contacto ID').item.json.pushName + '! Tu cita está confirmada:\\n📅 ' + $('Extraer contacto ID').item.json.dateStr + '\\n\\nRecibirás un correo de confirmación. ¿Tienes alguna pregunta?' }) }}",
         "options": {}
       },
       "id": "node-confirmar-cita-cliente",
@@ -1671,7 +1671,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ number: $json.phone, text: 'Aqui esta el link para agendar tu cita con Roy\\nhttps://api.leadconnectorhq.com/widget/booking/xyMoZ5iLareyhwQNijO5' }) }}",
+        "jsonBody": "={{ JSON.stringify({ number: $json.phone, text: 'Aqui esta el link para agendar tu cita con Dayana\\nhttps://api.leadconnectorhq.com/widget/booking/xyMoZ5iLareyhwQNijO5' }) }}",
         "options": {}
       },
       "id": "node-enviar-link-booking",
@@ -1880,7 +1880,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const appts = $input.first().json.appointments || $input.first().json.items || [];\nconst parsedCita = $('Parsear cita').item.json;\nconst appt = appts[0];\nif (!appt) return [{ json: { reagendado: false, reason: 'no_appointment_found' } }];\n\nconst GHL_KEY = 'pit-b467b97c-de3a-4321-bb0f-e9f09c380faf';\nconst H = { 'Authorization': `Bearer ${GHL_KEY}`, 'Version': '2021-07-28', 'Content-Type': 'application/json' };\n\ntry {\n  const resp = await fetch(`https://services.leadconnectorhq.com/calendars/events/appointments/${appt.id}`, {\n    method: 'PUT', headers: H,\n    body: JSON.stringify({\n      startTime: parsedCita.startTime,\n      endTime: parsedCita.endTime,\n      appointmentStatus: 'confirmed',\n      title: appt.title || 'Cita reagendada'\n    })\n  });\n  const data = await resp.json();\n  return [{ json: { reagendado: true, appointmentId: appt.id, newStart: parsedCita.startTime } }];\n} catch(e) {\n  return [{ json: { reagendado: false, error: e.message } }];\n}"
+        "jsCode": "const action = $('Parsear cita').item.json.action;\nif (action !== 'reagendar') return [{ json: { skipped: true, reason: 'action_not_reagendar' } }];\n\nconst appts = $input.first().json.appointments || $input.first().json.items || [];\nconst parsedCita = $('Parsear cita').item.json;\nconst appt = appts[0];\nif (!appt) return [{ json: { reagendado: false, reason: 'no_appointment_found' } }];\n\nconst GHL_KEY = 'pit-b467b97c-de3a-4321-bb0f-e9f09c380faf';\n\ntry {\n  await $helpers.httpRequest({\n    method: 'PUT',\n    url: 'https://services.leadconnectorhq.com/calendars/events/appointments/' + appt.id,\n    headers: {\n      'Authorization': 'Bearer ' + GHL_KEY,\n      'Version': '2021-07-28',\n      'Content-Type': 'application/json'\n    },\n    body: JSON.stringify({\n      startTime: parsedCita.startTime,\n      endTime: parsedCita.endTime,\n      appointmentStatus: 'confirmed',\n      title: appt.title || 'Cita reagendada',\n      toNotify: true\n    })\n  });\n  return [{ json: { reagendado: true, appointmentId: appt.id, newStart: parsedCita.startTime } }];\n} catch(e) {\n  return [{ json: { reagendado: false, error: e.message } }];\n}"
       },
       "id": "node-reagendar-cita",
       "name": "Reagendar Cita GHL",
@@ -1894,7 +1894,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const appts = $input.first().json.appointments || $input.first().json.items || [];\nconst appt = appts[0];\nif (!appt) return [{ json: { cancelado: false, reason: 'no_appointment_found' } }];\n\nconst GHL_KEY = 'pit-b467b97c-de3a-4321-bb0f-e9f09c380faf';\nconst H = { 'Authorization': `Bearer ${GHL_KEY}`, 'Version': '2021-07-28', 'Content-Type': 'application/json' };\n\ntry {\n  await fetch(`https://services.leadconnectorhq.com/calendars/events/appointments/${appt.id}`, {\n    method: 'DELETE', headers: H\n  });\n  return [{ json: { cancelado: true, appointmentId: appt.id } }];\n} catch(e) {\n  return [{ json: { cancelado: false, error: e.message } }];\n}"
+        "jsCode": "const action = $('Parsear cita').item.json.action;\nif (action !== 'cancelar') return [{ json: { skipped: true, reason: 'action_not_cancelar' } }];\n\nconst appts = $input.first().json.appointments || $input.first().json.items || [];\nconst appt = appts[0];\nif (!appt) return [{ json: { cancelado: false, reason: 'no_appointment_found' } }];\n\nconst GHL_KEY = 'pit-b467b97c-de3a-4321-bb0f-e9f09c380faf';\n\ntry {\n  await $helpers.httpRequest({\n    method: 'DELETE',\n    url: 'https://services.leadconnectorhq.com/calendars/events/appointments/' + appt.id,\n    headers: {\n      'Authorization': 'Bearer ' + GHL_KEY,\n      'Version': '2021-07-28'\n    }\n  });\n  return [{ json: { cancelado: true, appointmentId: appt.id } }];\n} catch(e) {\n  return [{ json: { cancelado: false, error: e.message } }];\n}"
       },
       "id": "node-cancelar-cita",
       "name": "Cancelar Cita GHL",
@@ -2386,11 +2386,6 @@
             "node": "¿Tiene fecha?",
             "type": "main",
             "index": 0
-          },
-          {
-            "node": "Accion de cita?",
-            "type": "main",
-            "index": 0
           }
         ]
       ]
@@ -2406,7 +2401,7 @@
         ],
         [
           {
-            "node": "Enviar link booking",
+            "node": "Accion de cita?",
             "type": "main",
             "index": 0
           }
@@ -2507,7 +2502,13 @@
             "index": 0
           }
         ],
-        []
+        [
+          {
+            "node": "Enviar link booking",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Buscar Cita GHL": {
@@ -2517,9 +2518,7 @@
             "node": "Reagendar Cita GHL",
             "type": "main",
             "index": 0
-          }
-        ],
-        [
+          },
           {
             "node": "Cancelar Cita GHL",
             "type": "main",
