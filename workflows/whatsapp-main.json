@@ -1,8 +1,5 @@
 {
-  "id": "dYnMainWA2026xxAB",
   "name": "dayana-whatsapp-main",
-  "active": true,
-  "isArchived": false,
   "nodes": [
     {
       "parameters": {
@@ -16,7 +13,7 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
-        200,
+        208,
         400
       ],
       "webhookId": "osiris-whatsapp"
@@ -113,7 +110,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        420,
+        432,
         400
       ]
     },
@@ -241,7 +238,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        860,
+        864,
         400
       ]
     },
@@ -254,42 +251,43 @@
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ message: { key: { id: $json.messageId || '', remoteJid: $json.remoteJid || ($json.phone + '@s.whatsapp.net'), fromMe: false }, message: $json.rawMessage || {} } }) }}",
-        "options": {},
-        "continueOnFail": true
+        "options": {}
       },
       "id": "node-media-ctx",
       "name": "Get Media Base64",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1080,
-        220
+        1088,
+        224
       ],
-      "continueOnFail": true,
       "credentials": {
         "httpHeaderAuth": {
           "id": "6xnHQwH4411Vc2je",
           "name": "Evolution API — Dayana Munoz"
         }
-      }
+      },
+      "continueOnFail": true
     },
     {
+      "parameters": {
+        "jsCode": "\nconst item = $input.first().json;\nconst base64Clean = (item.base64 || '').replace(/^data:[^;]+;base64,/, '');\nconst mimetype = item.mimetype || 'image/jpeg';\nconst caption = item.mediaCaption || '';\nconst isDoc = item.messageType === 'documentMessage';\n\nconst sysPrompt = `Eres Andrea, asistente virtual de Dayana Muñoz. Analiza el contenido enviado por el cliente. Si es sobre seguros/salud/finanzas responde desde Dayana Finance con empatia. Si es sobre marketing/negocios digitales responde desde DOMD PRO. Maximo 300 caracteres en espanol.`;\n\nconst userContent = base64Clean\n  ? [\n      { type: 'text', text: caption || (isDoc ? 'Documento del cliente.' : 'Imagen del cliente.') },\n      { type: 'image_url', image_url: { url: `data:${mimetype};base64,${base64Clean}`, detail: 'low' } }\n    ]\n  : [{ type: 'text', text: caption || 'El cliente envió un archivo. Acusa recibo amablemente.' }];\n\ntry {\n  const resp = await fetch('https://api.openai.com/v1/chat/completions', {\n    method: 'POST',\n    headers: {\n      'Authorization': 'Bearer TU_OPENAI_API_KEY',\n      'Content-Type': 'application/json'\n    },\n    body: JSON.stringify({\n      model: 'gpt-4o-mini',\n      temperature: 0.7,\n      max_tokens: 300,\n      messages: [\n        { role: 'system', content: sysPrompt },\n        { role: 'user', content: userContent }\n      ]\n    })\n  });\n  const data = await resp.json();\n  const text = data?.choices?.[0]?.message?.content || 'Gracias por compartir 😊 ¿En qué puedo ayudarte?';\n  return [{ json: { ...item, visionResponse: text } }];\n} catch(e) {\n  return [{ json: { ...item, visionResponse: 'Gracias 😊 ¿Cómo puedo ayudarte hoy?' } }];\n}\n"
+      },
       "id": "node-openai-media",
       "name": "OpenAI Vision",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1300,
-        220
-      ],
-      "parameters": {
-        "jsCode": "\nconst item = $input.first().json;\nconst base64Clean = (item.base64 || '').replace(/^data:[^;]+;base64,/, '');\nconst mimetype = item.mimetype || 'image/jpeg';\nconst caption = item.mediaCaption || '';\nconst isDoc = item.messageType === 'documentMessage';\n\nconst sysPrompt = `Eres Andrea, asistente virtual de Dayana Muñoz. Analiza el contenido enviado por el cliente. Si es sobre seguros/salud/finanzas responde desde Dayana Finance con empatia. Si es sobre marketing/negocios digitales responde desde DOMD PRO. Maximo 300 caracteres en espanol.`;\n\nconst userContent = base64Clean\n  ? [\n      { type: 'text', text: caption || (isDoc ? 'Documento del cliente.' : 'Imagen del cliente.') },\n      { type: 'image_url', image_url: { url: `data:${mimetype};base64,${base64Clean}`, detail: 'low' } }\n    ]\n  : [{ type: 'text', text: caption || 'El cliente envió un archivo. Acusa recibo amablemente.' }];\n\ntry {\n  const resp = await fetch('https://api.openai.com/v1/chat/completions', {\n    method: 'POST',\n    headers: {\n      'Authorization': 'Bearer TU_OPENAI_API_KEY',\n      'Content-Type': 'application/json'\n    },\n    body: JSON.stringify({\n      model: 'gpt-4o-mini',\n      temperature: 0.7,\n      max_tokens: 300,\n      messages: [\n        { role: 'system', content: sysPrompt },\n        { role: 'user', content: userContent }\n      ]\n    })\n  });\n  const data = await resp.json();\n  const text = data?.choices?.[0]?.message?.content || 'Gracias por compartir 😊 ¿En qué puedo ayudarte?';\n  return [{ json: { ...item, visionResponse: text } }];\n} catch(e) {\n  return [{ json: { ...item, visionResponse: 'Gracias 😊 ¿Cómo puedo ayudarte hoy?' } }];\n}\n"
-      }
+        1312,
+        224
+      ]
     },
     {
       "parameters": {
         "method": "POST",
         "url": "https://n8n-evolution-api.78s07r.easypanel.host/message/sendText/Dayana%20Munoz",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -302,9 +300,7 @@
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ number: $('Extraer datos').item.json.phone, text: $json.visionResponse }) }}",
-        "options": {},
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth"
+        "options": {}
       },
       "id": "node-send-media",
       "name": "Enviar resp media",
@@ -312,15 +308,15 @@
       "typeVersion": 4.2,
       "position": [
         1520,
-        220
+        224
       ],
-      "continueOnFail": true,
       "credentials": {
         "httpHeaderAuth": {
           "id": "6xnHQwH4411Vc2je",
           "name": "Evolution API — Dayana Munoz"
         }
-      }
+      },
+      "continueOnFail": true
     },
     {
       "parameters": {
@@ -351,38 +347,37 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        860,
-        580
+        864,
+        592
       ]
     },
     {
       "parameters": {
-        "jsCode": "\n// Read conversation history from n8n workflow static data (persists across runs)\nconst staticData = $getWorkflowStaticData('global');\nconst phone = items[0].json.phone;\nconst history = staticData[phone] || [];\n\n// Return last 10 message pairs (20 messages)\nconst recent = history.slice(-20);\nconst historyText = recent.map(m => m.role + ': ' + m.content).join('\\n');\n\nreturn [{\n  json: {\n    ...items[0].json,\n    historyText: historyText,\n    historyArray: recent\n  }\n}];\n",
-        "mode": "runOnceForAllItems"
+        "jsCode": "\n// Read conversation history from n8n workflow static data (persists across runs)\nconst staticData = $getWorkflowStaticData('global');\nconst phone = items[0].json.phone;\nconst history = staticData[phone] || [];\n\n// Return last 10 message pairs (20 messages)\nconst recent = history.slice(-20);\nconst historyText = recent.map(m => m.role + ': ' + m.content).join('\\n');\n\nreturn [{\n  json: {\n    ...items[0].json,\n    historyText: historyText,\n    historyArray: recent\n  }\n}];\n"
       },
       "id": "node-load-history",
       "name": "Cargar historial",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1080,
-        580
+        1088,
+        592
       ],
       "continueOnFail": true
     },
     {
+      "parameters": {
+        "jsCode": "const GHL_KEY = 'pit-b467b97c-de3a-4321-bb0f-e9f09c380faf';\nconst calendarId = 'xyMoZ5iLareyhwQNijO5';\n\nconst now = new Date();\nconst start = new Date(now);\nstart.setHours(0, 0, 0, 0);\nconst end = new Date(start);\nend.setDate(end.getDate() + 7);\n\nconst DAYS = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];\nconst MONTHS = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];\n\nlet slotsText = '';\ntry {\n  const resp = await fetch(\n    'https://services.leadconnectorhq.com/calendars/' + calendarId + '/free-slots?startDate=' + start.getTime() + '&endDate=' + end.getTime() + '&timezone=America/New_York',\n    { method: 'GET', headers: { 'Authorization': 'Bearer ' + GHL_KEY, 'Version': '2021-07-28' } }\n  );\n  const data = await resp.json();\n  const slots = [];\n  if (data && typeof data === 'object') {\n    // GHL returns slots grouped by date key\n    Object.values(data).forEach(daySlots => {\n      if (Array.isArray(daySlots)) daySlots.forEach(s => slots.push(s.time || s.startTime || s));\n    });\n  }\n  if (slots.length > 0) {\n    const seen = new Set();\n    const lines = [];\n    for (const slot of slots) {\n      if (lines.length >= 9) break;\n      const d = new Date(slot);\n      if (isNaN(d.getTime())) continue;\n      const h = d.getHours();\n      const m = d.getMinutes();\n      const ampm = h < 12 ? 'AM' : 'PM';\n      const h12 = h % 12 || 12;\n      const label = DAYS[d.getDay()] + ' ' + d.getDate() + ' de ' + MONTHS[d.getMonth()] + ' a las ' + h12 + ':' + String(m).padStart(2,'0') + ' ' + ampm + ' ET';\n      if (!seen.has(label)) { seen.add(label); lines.push(label); }\n    }\n    if (lines.length > 0) slotsText = lines.join('\\n');\n  }\n} catch(e) {}\n\nif (!slotsText) slotsText = 'No se pudo consultar disponibilidad. Usa horarios generales: lunes a viernes 8am-6pm ET.';\n\nreturn [{ json: { ...$input.first().json, availableSlots: slotsText } }];\n"
+      },
       "id": "node-ghl-slots",
       "name": "Disponibilidad GHL",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1190,
-        580
+        1200,
+        592
       ],
-      "continueOnFail": true,
-      "parameters": {
-        "jsCode": "const GHL_KEY = 'pit-b467b97c-de3a-4321-bb0f-e9f09c380faf';\nconst calendarId = 'xyMoZ5iLareyhwQNijO5';\n\nconst now = new Date();\nconst start = new Date(now);\nstart.setHours(0, 0, 0, 0);\nconst end = new Date(start);\nend.setDate(end.getDate() + 7);\n\nconst DAYS = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];\nconst MONTHS = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];\n\nlet slotsText = '';\ntry {\n  const resp = await fetch(\n    'https://services.leadconnectorhq.com/calendars/' + calendarId + '/free-slots?startDate=' + start.getTime() + '&endDate=' + end.getTime() + '&timezone=America/New_York',\n    { method: 'GET', headers: { 'Authorization': 'Bearer ' + GHL_KEY, 'Version': '2021-07-28' } }\n  );\n  const data = await resp.json();\n  const slots = [];\n  if (data && typeof data === 'object') {\n    // GHL returns slots grouped by date key\n    Object.values(data).forEach(daySlots => {\n      if (Array.isArray(daySlots)) daySlots.forEach(s => slots.push(s.time || s.startTime || s));\n    });\n  }\n  if (slots.length > 0) {\n    const seen = new Set();\n    const lines = [];\n    for (const slot of slots) {\n      if (lines.length >= 9) break;\n      const d = new Date(slot);\n      if (isNaN(d.getTime())) continue;\n      const h = d.getHours();\n      const m = d.getMinutes();\n      const ampm = h < 12 ? 'AM' : 'PM';\n      const h12 = h % 12 || 12;\n      const label = DAYS[d.getDay()] + ' ' + d.getDate() + ' de ' + MONTHS[d.getMonth()] + ' a las ' + h12 + ':' + String(m).padStart(2,'0') + ' ' + ampm + ' ET';\n      if (!seen.has(label)) { seen.add(label); lines.push(label); }\n    }\n    if (lines.length > 0) slotsText = lines.join('\\n');\n  }\n} catch(e) {}\n\nif (!slotsText) slotsText = 'No se pudo consultar disponibilidad. Usa horarios generales: lunes a viernes 8am-6pm ET.';\n\nreturn [{ json: { ...$input.first().json, availableSlots: slotsText } }];\n"
-      }
+      "continueOnFail": true
     },
     {
       "parameters": {
@@ -439,14 +434,16 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1300,
-        580
+        1312,
+        592
       ]
     },
     {
       "parameters": {
         "method": "POST",
         "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -459,9 +456,7 @@
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ model: 'gpt-4o-mini', temperature: 0.7, max_tokens: 400, messages: [{ role: 'system', content: $json.systemPrompt + $json.clientNameContext + ($json.availableSlots ? '\\n\\nDISPONIBILIDAD REAL EN EL CALENDARIO DE DAYANA (próximos 7 días, hora ET — ÚSALOS exactamente al ofrecer horarios):\\n' + $json.availableSlots : '') + ($json.historyText ? '\\n\\nCONVERSATION HISTORY (newest last):\\n' + $json.historyText : '') }, { role: 'user', content: $json.userMessage }] }) }}",
-        "options": {},
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth"
+        "options": {}
       },
       "id": "node-openai",
       "name": "OpenAI Chat",
@@ -469,7 +464,7 @@
       "typeVersion": 4.2,
       "position": [
         1520,
-        580
+        592
       ],
       "credentials": {
         "httpHeaderAuth": {
@@ -593,22 +588,21 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1740,
-        580
+        1744,
+        592
       ]
     },
     {
       "parameters": {
-        "jsCode": "\n// Save conversation exchange to n8n workflow static data\nconst staticData = $getWorkflowStaticData('global');\nconst phone = items[0].json.phone;\nconst userMsg = items[0].json.userMessage || '';\nconst aiResp = items[0].json.cleanResponse || items[0].json.aiResponse || '';\n\nif (!staticData[phone]) staticData[phone] = [];\n\n// Add user + assistant messages\nif (userMsg) staticData[phone].push({ role: 'user', content: userMsg });\nif (aiResp) staticData[phone].push({ role: 'assistant', content: aiResp.replace('[SOLICITA_LLAMADA]','').trim() });\n\n// Keep only last 30 messages per phone (15 exchanges)\nif (staticData[phone].length > 30) {\n  staticData[phone] = staticData[phone].slice(-30);\n}\n\nreturn items;\n",
-        "mode": "runOnceForAllItems"
+        "jsCode": "\n// Save conversation exchange to n8n workflow static data\nconst staticData = $getWorkflowStaticData('global');\nconst phone = items[0].json.phone;\nconst userMsg = items[0].json.userMessage || '';\nconst aiResp = items[0].json.cleanResponse || items[0].json.aiResponse || '';\n\nif (!staticData[phone]) staticData[phone] = [];\n\n// Add user + assistant messages\nif (userMsg) staticData[phone].push({ role: 'user', content: userMsg });\nif (aiResp) staticData[phone].push({ role: 'assistant', content: aiResp.replace('[SOLICITA_LLAMADA]','').trim() });\n\n// Keep only last 30 messages per phone (15 exchanges)\nif (staticData[phone].length > 30) {\n  staticData[phone] = staticData[phone].slice(-30);\n}\n\nreturn items;\n"
       },
       "id": "node-save-history",
       "name": "Guardar historial",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1960,
-        580
+        1968,
+        592
       ],
       "continueOnFail": true
     },
@@ -641,14 +635,16 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        2180,
-        580
+        2192,
+        592
       ]
     },
     {
       "parameters": {
         "method": "POST",
         "url": "https://n8n-evolution-api.78s07r.easypanel.host/message/sendText/Dayana%20Munoz",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -661,9 +657,7 @@
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ number: '16155467023', text: '🔔 *LEAD SOLICITA LLAMADA*\\n\\n👤 ' + $('Extraer respuesta AI').item.json.pushName + '\\n📱 WhatsApp: +' + $('Extraer respuesta AI').item.json.phone + '\\n💬 Último mensaje: ' + $('Extraer respuesta AI').item.json.userMessage + '\\n📋 Motivo: ' + $('Extraer respuesta AI').item.json.motivoLlamada + '\\n\\n¡Llámalos lo antes posible! 📞' }) }}",
-        "options": {},
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth"
+        "options": {}
       },
       "id": "node-notify-osiris",
       "name": "Notificar a Dayana",
@@ -673,18 +667,20 @@
         2400,
         480
       ],
-      "continueOnFail": true,
       "credentials": {
         "httpHeaderAuth": {
           "id": "6xnHQwH4411Vc2je",
           "name": "Evolution API — Dayana Munoz"
         }
-      }
+      },
+      "continueOnFail": true
     },
     {
       "parameters": {
         "method": "POST",
         "url": "https://n8n-evolution-api.78s07r.easypanel.host/message/sendText/Dayana%20Munoz",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -697,9 +693,7 @@
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ number: $('Extraer respuesta AI').item.json.phone, text: $('Extraer respuesta AI').item.json.cleanResponse }) }}",
-        "options": {},
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth"
+        "options": {}
       },
       "id": "node-send-call-branch",
       "name": "Enviar resp (llamada)",
@@ -707,20 +701,22 @@
       "typeVersion": 4.2,
       "position": [
         2400,
-        600
+        608
       ],
-      "continueOnFail": true,
       "credentials": {
         "httpHeaderAuth": {
           "id": "6xnHQwH4411Vc2je",
           "name": "Evolution API — Dayana Munoz"
         }
-      }
+      },
+      "continueOnFail": true
     },
     {
       "parameters": {
         "method": "POST",
         "url": "https://n8n-evolution-api.78s07r.easypanel.host/message/sendText/Dayana%20Munoz",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -733,9 +729,7 @@
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ number: $('Extraer respuesta AI').item.json.phone, text: $('Extraer respuesta AI').item.json.cleanResponse }) }}",
-        "options": {},
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth"
+        "options": {}
       },
       "id": "node-send",
       "name": "Enviar respuesta WhatsApp",
@@ -745,13 +739,13 @@
         2400,
         720
       ],
-      "continueOnFail": true,
       "credentials": {
         "httpHeaderAuth": {
           "id": "6xnHQwH4411Vc2je",
           "name": "Evolution API — Dayana Munoz"
         }
-      }
+      },
+      "continueOnFail": true
     },
     {
       "parameters": {
@@ -791,14 +785,16 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        2620,
-        840
+        2624,
+        848
       ]
     },
     {
       "parameters": {
         "method": "POST",
         "url": "https://services.leadconnectorhq.com/contacts/",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -815,25 +811,23 @@
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ locationId: 'IYslAlpLthyYmzorDhnP', firstName: $('Extraer datos').item.json.pushName, phone: '+' + $('Extraer datos').item.json.phone, tags: ['whatsapp-lead'] }) }}",
-        "options": {},
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth"
+        "options": {}
       },
       "id": "node-ghl",
       "name": "GHL Crear Contacto",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        2620,
+        2624,
         720
       ],
-      "continueOnFail": true,
       "credentials": {
         "httpHeaderAuth": {
           "id": "UwCXV9FRW67rK9mb",
           "name": "GoHighLevel — Dayana Munoz"
         }
-      }
+      },
+      "continueOnFail": true
     },
     {
       "parameters": {
@@ -870,40 +864,37 @@
     },
     {
       "parameters": {
-        "method": "GET",
         "url": "=https://n8n-chatwoot.78s07r.easypanel.host/api/v1/accounts/1/conversations?inbox_id=6&page=1",
-        "options": {},
-        "continueOnFail": true,
         "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth"
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
       },
       "id": "node-find-conv",
       "name": "Buscar conv Chatwoot",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        2620,
+        2624,
         320
       ],
-      "continueOnFail": true,
       "credentials": {
         "httpHeaderAuth": {
           "id": "Ytzf0t1owJeoeG6w",
           "name": "Chatwoot — Dayana Munoz"
         }
-      }
+      },
+      "continueOnFail": true
     },
     {
       "parameters": {
-        "jsCode": "\n// Find the conversation for this phone number — strict matching\nconst phone = $('Extraer respuesta AI').item.json.phone;\nconst allConvs = items[0].json.data?.payload || [];\n\nconst normalize = (p) => (p || '').replace(/\\D/g, '').replace(/^1/, '').slice(-10);\nconst normalizedPhone = normalize(phone);\n\nconst myConv = allConvs.find(c => {\n  const sender = c.meta?.sender?.phone_number || '';\n  return normalize(sender) === normalizedPhone;\n});\n\nreturn [{json: {\n  convId: myConv?.id || null,\n  phone: phone,\n  pushName: $('Extraer respuesta AI').item.json.pushName,\n  cleanResponse: $('Extraer respuesta AI').item.json.cleanResponse\n}}];\n",
-        "mode": "runOnceForAllItems"
+        "jsCode": "\n// Find the conversation for this phone number — strict matching\nconst phone = $('Extraer respuesta AI').item.json.phone;\nconst allConvs = items[0].json.data?.payload || [];\n\nconst normalize = (p) => (p || '').replace(/\\D/g, '').replace(/^1/, '').slice(-10);\nconst normalizedPhone = normalize(phone);\n\nconst myConv = allConvs.find(c => {\n  const sender = c.meta?.sender?.phone_number || '';\n  return normalize(sender) === normalizedPhone;\n});\n\nreturn [{json: {\n  convId: myConv?.id || null,\n  phone: phone,\n  pushName: $('Extraer respuesta AI').item.json.pushName,\n  cleanResponse: $('Extraer respuesta AI').item.json.cleanResponse\n}}];\n"
       },
       "id": "node-extract-conv",
       "name": "Extraer conv ID",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2840,
+        2848,
         320
       ],
       "continueOnFail": true
@@ -912,6 +903,8 @@
       "parameters": {
         "method": "POST",
         "url": "=https://n8n-chatwoot.78s07r.easypanel.host/api/v1/accounts/1/conversations/{{ $json.convId }}/assignments",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -924,31 +917,30 @@
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ assignee_id: 3 }) }}",
-        "options": {},
-        "continueOnFail": true,
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth"
+        "options": {}
       },
       "id": "node-assign-chatwoot",
       "name": "Asignar a Dayana (Chatwoot)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        3060,
+        3072,
         320
       ],
-      "continueOnFail": true,
       "credentials": {
         "httpHeaderAuth": {
           "id": "Ytzf0t1owJeoeG6w",
           "name": "Chatwoot — Dayana Munoz"
         }
-      }
+      },
+      "continueOnFail": true
     },
     {
       "parameters": {
         "method": "POST",
         "url": "https://n8n-evolution-api.78s07r.easypanel.host/message/sendText/Dayana%20Munoz",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -961,36 +953,25 @@
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ number: '16155467023', text: '🙋 *LEAD QUIERE AGENTE HUMANO*\\n\\n👤 ' + $('Extraer respuesta AI').item.json.pushName + '\\n📱 WhatsApp: +' + $('Extraer respuesta AI').item.json.phone + '\\n\\nRevisa Chatwoot para continuar la conversación. 💬' }) }}",
-        "options": {},
-        "continueOnFail": true,
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth"
+        "options": {}
       },
       "id": "node-notify-human",
       "name": "Notificar Dayana (humano)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        3060,
-        440
+        3072,
+        448
       ],
-      "continueOnFail": true,
       "credentials": {
         "httpHeaderAuth": {
           "id": "6xnHQwH4411Vc2je",
           "name": "Evolution API — Dayana Munoz"
         }
-      }
+      },
+      "continueOnFail": true
     },
     {
-      "id": "node-cmd-check",
-      "name": "¿Es comando STOP/CONTINUE?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        860,
-        200
-      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -1119,71 +1100,50 @@
             }
           ],
           "combinator": "or"
-        }
-      }
+        },
+        "options": {}
+      },
+      "id": "node-cmd-check",
+      "name": "¿Es comando STOP/CONTINUE?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        864,
+        208
+      ]
     },
     {
+      "parameters": {
+        "options": {}
+      },
       "id": "node-cmd-parse",
       "name": "Parsear comando",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3,
       "position": [
-        1100,
-        100
-      ],
-      "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "cp1",
-              "name": "cmdAction",
-              "value": "={{ (()=>{ const msg=$json.message.trim().toLowerCase(); const stops=['stop','no me escribas','no me molestes','unsubscribe','no me contactes','no mas mensajes','no más mensajes','borra mi numero','borrame','no quiero mensajes','no me llames']; const conts=['continue','continuar','reanudar']; if(stops.some(p=>msg.includes(p))) return 'STOP'; if(conts.some(p=>msg.includes(p))) return 'CONTINUE'; return $json.message.trim().split(/\\s+/)[0].toUpperCase(); })() }}",
-              "type": "string"
-            },
-            {
-              "id": "cp2",
-              "name": "cmdPhone",
-              "value": "={{ ($json.message.trim().split(/\\s+/).slice(1).join('') || '').replace(/\\D/g, '') }}",
-              "type": "string"
-            },
-            {
-              "id": "cp3",
-              "name": "senderPhone",
-              "value": "={{ $json.phone }}",
-              "type": "string"
-            }
-          ]
-        },
-        "options": {
-          "includeBinaryData": false
-        }
-      }
+        1104,
+        112
+      ]
     },
     {
+      "parameters": {
+        "jsCode": "const staticData = $getWorkflowStaticData('global');\nif (!staticData.pausedContacts) staticData.pausedContacts = {};\n\nconst action = $json.cmdAction;\nconst phone = $json.phone;\nconst cmdPhone = ($json.cmdPhone || '').replace(/\\D/g, '');\nconst targetPhone = (cmdPhone && cmdPhone.length > 4) ? cmdPhone : phone;\n\nconst GHL_KEY = 'pit-b467b97c-de3a-4321-bb0f-e9f09c380faf';\nconst GHL_LOC = 'IYslAlpLthyYmzorDhnP';\nconst H = { 'Authorization': 'Bearer ' + GHL_KEY, 'Version': '2021-07-28', 'Content-Type': 'application/json' };\n\n// Update staticData cache\nif (action === 'STOP') {\n  staticData.pausedContacts[targetPhone] = true;\n} else {\n  delete staticData.pausedContacts[targetPhone];\n}\n\n// Update GHL tag — find or CREATE contact if missing\ntry {\n  const sr = await fetch('https://services.leadconnectorhq.com/contacts/?locationId=' + GHL_LOC + '&query=' + encodeURIComponent('+' + targetPhone), { method: 'GET', headers: H });\n  const sd = await sr.json();\n  const contacts = sd.contacts || [];\n  let contactId = contacts[0]?.id;\n  let currentTags = contacts[0]?.tags || [];\n\n  if (!contactId) {\n    // Contact doesn't exist yet — create it\n    const cr = await fetch('https://services.leadconnectorhq.com/contacts/', {\n      method: 'POST', headers: H,\n      body: JSON.stringify({ locationId: GHL_LOC, phone: '+' + targetPhone, tags: action === 'STOP' ? ['lucy-paused'] : [] })\n    });\n    const cd = await cr.json();\n    contactId = cd.contact?.id || cd.id || null;\n    currentTags = action === 'STOP' ? ['lucy-paused'] : [];\n  }\n\n  if (contactId) {\n    const newTags = action === 'STOP'\n      ? [...new Set([...currentTags, 'lucy-paused'])]\n      : currentTags.filter(t => t !== 'lucy-paused');\n    await fetch('https://services.leadconnectorhq.com/contacts/' + contactId, {\n      method: 'PUT', headers: H,\n      body: JSON.stringify({ tags: newTags })\n    });\n  }\n} catch(e) { /* best-effort — staticData ya fue actualizado */ }\n\nconst msg = action === 'STOP'\n  ? '⏸️ Entendido, no te escribiré más. Si en algún momento necesitas ayuda, escríbeme *CONTINUAR* y con gusto te atiendo.'\n  : '▶️ ¡De vuelta! Aquí estoy para ayudarte 😊 ¿En qué puedo asistirte?';\n\nreturn [{ json: { confirmMsg: msg, senderPhone: phone, targetPhone } }];\n"
+      },
       "id": "node-cmd-exec",
       "name": "Ejecutar STOP/CONTINUE",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1350,
-        100
-      ],
-      "parameters": {
-        "jsCode": "const staticData = $getWorkflowStaticData('global');\nif (!staticData.pausedContacts) staticData.pausedContacts = {};\n\nconst action = $json.cmdAction;\nconst phone = $json.phone;\nconst cmdPhone = ($json.cmdPhone || '').replace(/\\D/g, '');\nconst targetPhone = (cmdPhone && cmdPhone.length > 4) ? cmdPhone : phone;\n\nconst GHL_KEY = 'pit-b467b97c-de3a-4321-bb0f-e9f09c380faf';\nconst GHL_LOC = 'IYslAlpLthyYmzorDhnP';\nconst H = { 'Authorization': 'Bearer ' + GHL_KEY, 'Version': '2021-07-28', 'Content-Type': 'application/json' };\n\n// Update staticData cache\nif (action === 'STOP') {\n  staticData.pausedContacts[targetPhone] = true;\n} else {\n  delete staticData.pausedContacts[targetPhone];\n}\n\n// Update GHL tag — find or CREATE contact if missing\ntry {\n  const sr = await fetch('https://services.leadconnectorhq.com/contacts/?locationId=' + GHL_LOC + '&query=' + encodeURIComponent('+' + targetPhone), { method: 'GET', headers: H });\n  const sd = await sr.json();\n  const contacts = sd.contacts || [];\n  let contactId = contacts[0]?.id;\n  let currentTags = contacts[0]?.tags || [];\n\n  if (!contactId) {\n    // Contact doesn't exist yet — create it\n    const cr = await fetch('https://services.leadconnectorhq.com/contacts/', {\n      method: 'POST', headers: H,\n      body: JSON.stringify({ locationId: GHL_LOC, phone: '+' + targetPhone, tags: action === 'STOP' ? ['lucy-paused'] : [] })\n    });\n    const cd = await cr.json();\n    contactId = cd.contact?.id || cd.id || null;\n    currentTags = action === 'STOP' ? ['lucy-paused'] : [];\n  }\n\n  if (contactId) {\n    const newTags = action === 'STOP'\n      ? [...new Set([...currentTags, 'lucy-paused'])]\n      : currentTags.filter(t => t !== 'lucy-paused');\n    await fetch('https://services.leadconnectorhq.com/contacts/' + contactId, {\n      method: 'PUT', headers: H,\n      body: JSON.stringify({ tags: newTags })\n    });\n  }\n} catch(e) { /* best-effort — staticData ya fue actualizado */ }\n\nconst msg = action === 'STOP'\n  ? '⏸️ Entendido, no te escribiré más. Si en algún momento necesitas ayuda, escríbeme *CONTINUAR* y con gusto te atiendo.'\n  : '▶️ ¡De vuelta! Aquí estoy para ayudarte 😊 ¿En qué puedo asistirte?';\n\nreturn [{ json: { confirmMsg: msg, senderPhone: phone, targetPhone } }];\n"
-      }
+        1360,
+        112
+      ]
     },
     {
-      "id": "node-cmd-confirm",
-      "name": "Confirmar comando a Dayana",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4,
-      "position": [
-        1600,
-        100
-      ],
       "parameters": {
         "method": "POST",
         "url": "https://n8n-evolution-api.78s07r.easypanel.host/message/sendText/Dayana%20Munoz",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -1196,9 +1156,16 @@
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ number: $json.senderPhone, text: $json.confirmMsg }) }}",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth"
+        "options": {}
       },
+      "id": "node-cmd-confirm",
+      "name": "Confirmar comando a Dayana",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        1600,
+        112
+      ],
       "credentials": {
         "httpHeaderAuth": {
           "id": "6xnHQwH4411Vc2je",
@@ -1207,27 +1174,19 @@
       }
     },
     {
+      "parameters": {
+        "jsCode": "const staticData = $getWorkflowStaticData('global');\nif (!staticData.pausedContacts) staticData.pausedContacts = {};\nconst phone = $json.phone;\n\n// 1. Cache rápido en staticData\nlet isPaused = !!staticData.pausedContacts[phone];\n\n// 2. Si no está en cache, verificar el tag lucy-paused en GHL (URL correcta)\nif (!isPaused && phone) {\n  try {\n    const data = await $helpers.httpRequest({\n      method: 'GET',\n      url: 'https://services.leadconnectorhq.com/contacts/?locationId=IYslAlpLthyYmzorDhnP&query=' + encodeURIComponent('+' + phone),\n      headers: { 'Authorization': 'Bearer pit-b467b97c-de3a-4321-bb0f-e9f09c380faf', 'Version': '2021-07-28' }\n    });\n    const contact = (data.contacts || [])[0];\n    if (contact && Array.isArray(contact.tags) && contact.tags.includes('lucy-paused')) {\n      isPaused = true;\n      staticData.pausedContacts[phone] = true; // repoblar cache\n    }\n  } catch(e) { /* best-effort */ }\n}\n\nreturn [{ json: { ...$json, isPaused } }];\n"
+      },
       "id": "node-paused-check",
       "name": "¿Contacto pausado?",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1050,
-        700
-      ],
-      "parameters": {
-        "jsCode": "const staticData = $getWorkflowStaticData('global');\nif (!staticData.pausedContacts) staticData.pausedContacts = {};\nconst phone = $json.phone;\n\n// 1. Cache rápido en staticData\nlet isPaused = !!staticData.pausedContacts[phone];\n\n// 2. Si no está en cache, verificar el tag lucy-paused en GHL (URL correcta)\nif (!isPaused && phone) {\n  try {\n    const resp = await fetch(\n      'https://services.leadconnectorhq.com/contacts/?locationId=IYslAlpLthyYmzorDhnP&query=' + encodeURIComponent('+' + phone),\n      { method: 'GET', headers: { 'Authorization': 'Bearer pit-b467b97c-de3a-4321-bb0f-e9f09c380faf', 'Version': '2021-07-28' } }\n    );\n    const data = await resp.json();\n    const contact = (data.contacts || [])[0];\n    if (contact && Array.isArray(contact.tags) && contact.tags.includes('lucy-paused')) {\n      isPaused = true;\n      staticData.pausedContacts[phone] = true; // repoblar cache\n    }\n  } catch(e) { /* best-effort */ }\n}\n\nreturn [{ json: { ...$json, isPaused } }];\n"
-      }
+        1056,
+        704
+      ]
     },
     {
-      "id": "node-paused-if",
-      "name": "¿Está pausado?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2,
-      "position": [
-        1260,
-        700
-      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -1248,84 +1207,85 @@
             }
           ],
           "combinator": "and"
-        }
-      }
+        },
+        "options": {}
+      },
+      "id": "node-paused-if",
+      "name": "¿Está pausado?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1264,
+        704
+      ]
     },
     {
+      "parameters": {
+        "jsCode": "\nconst staticData = $getWorkflowStaticData('global');\nconst msgId = $input.first().json?.body?.data?.key?.id;\nconst phone = $input.first().json?.body?.data?.key?.remoteJid?.split('@')[0] || '';\nif (!msgId) return $input.all();\n\nif (!staticData.processedIds) staticData.processedIds = {};\nif (!staticData.rateLimits) staticData.rateLimits = {};\n\n// Rate limiting: max 10 messages per 60 seconds per phone\nconst now = Date.now();\nconst minute = 60000;\nif (phone) {\n  if (!staticData.rateLimits[phone]) staticData.rateLimits[phone] = [];\n  staticData.rateLimits[phone] = staticData.rateLimits[phone].filter(t => now - t < minute);\n  if (staticData.rateLimits[phone].length >= 10) {\n    return []; // Rate limited — silently drop\n  }\n  staticData.rateLimits[phone].push(now);\n  // Cleanup: keep only 300 phones in rate limit table\n  const rlKeys = Object.keys(staticData.rateLimits);\n  if (rlKeys.length > 300) rlKeys.slice(0, rlKeys.length - 300).forEach(k => delete staticData.rateLimits[k]);\n}\n\n// Dedup: trim to last 500 IDs\nconst keys = Object.keys(staticData.processedIds);\nif (keys.length > 500) {\n  keys.slice(0, keys.length - 500).forEach(k => delete staticData.processedIds[k]);\n}\n\nif (staticData.processedIds[msgId]) {\n  return [];\n}\nstaticData.processedIds[msgId] = Date.now();\nreturn $input.all();\n"
+      },
       "id": "node-dedup",
       "name": "Dedup mensajes",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        530,
+        544,
         400
-      ],
-      "parameters": {
-        "jsCode": "\nconst staticData = $getWorkflowStaticData('global');\nconst msgId = $input.first().json?.body?.data?.key?.id;\nconst phone = $input.first().json?.body?.data?.key?.remoteJid?.split('@')[0] || '';\nif (!msgId) return $input.all();\n\nif (!staticData.processedIds) staticData.processedIds = {};\nif (!staticData.rateLimits) staticData.rateLimits = {};\n\n// Rate limiting: max 10 messages per 60 seconds per phone\nconst now = Date.now();\nconst minute = 60000;\nif (phone) {\n  if (!staticData.rateLimits[phone]) staticData.rateLimits[phone] = [];\n  staticData.rateLimits[phone] = staticData.rateLimits[phone].filter(t => now - t < minute);\n  if (staticData.rateLimits[phone].length >= 10) {\n    return []; // Rate limited — silently drop\n  }\n  staticData.rateLimits[phone].push(now);\n  // Cleanup: keep only 300 phones in rate limit table\n  const rlKeys = Object.keys(staticData.rateLimits);\n  if (rlKeys.length > 300) rlKeys.slice(0, rlKeys.length - 300).forEach(k => delete staticData.rateLimits[k]);\n}\n\n// Dedup: trim to last 500 IDs\nconst keys = Object.keys(staticData.processedIds);\nif (keys.length > 500) {\n  keys.slice(0, keys.length - 500).forEach(k => delete staticData.processedIds[k]);\n}\n\nif (staticData.processedIds[msgId]) {\n  return [];\n}\nstaticData.processedIds[msgId] = Date.now();\nreturn $input.all();\n"
-      }
+      ]
     },
     {
+      "parameters": {
+        "jsCode": "\nconst staticData = $getWorkflowStaticData('global');\nif (!staticData.lastResponseFor) staticData.lastResponseFor = {};\n\nconst phone = items[0].json.phone || '';\nconst msgId = items[0].json.messageId || '';\n\n// Output-level dedup: if same messageId already generated a response, skip\nif (msgId && phone && staticData.lastResponseFor[phone] === msgId) {\n  return []; // Duplicate — already responded to this message\n}\nif (msgId && phone) {\n  staticData.lastResponseFor[phone] = msgId;\n  const lrKeys = Object.keys(staticData.lastResponseFor);\n  if (lrKeys.length > 300) lrKeys.slice(0, lrKeys.length - 300).forEach(k => delete staticData.lastResponseFor[k]);\n}\n\n// Random 2-4 sec delay to simulate human typing\nconst ms = Math.floor(Math.random() * 2000) + 2000;\nawait new Promise(r => setTimeout(r, ms));\n\n// Track when Andrea sent to this phone (for bot detection)\nif (!staticData.lastSentAt) staticData.lastSentAt = {};\nif (phone) {\n  staticData.lastSentAt[phone] = Date.now();\n  const keys = Object.keys(staticData.lastSentAt);\n  if (keys.length > 300) keys.slice(0, keys.length - 300).forEach(k => delete staticData.lastSentAt[k]);\n}\nreturn $input.all();\n"
+      },
       "id": "node-delay",
       "name": "Delay humano",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2180,
+        2192,
         720
-      ],
-      "parameters": {
-        "jsCode": "\nconst staticData = $getWorkflowStaticData('global');\nif (!staticData.lastResponseFor) staticData.lastResponseFor = {};\n\nconst phone = items[0].json.phone || '';\nconst msgId = items[0].json.messageId || '';\n\n// Output-level dedup: if same messageId already generated a response, skip\nif (msgId && phone && staticData.lastResponseFor[phone] === msgId) {\n  return []; // Duplicate — already responded to this message\n}\nif (msgId && phone) {\n  staticData.lastResponseFor[phone] = msgId;\n  const lrKeys = Object.keys(staticData.lastResponseFor);\n  if (lrKeys.length > 300) lrKeys.slice(0, lrKeys.length - 300).forEach(k => delete staticData.lastResponseFor[k]);\n}\n\n// Random 2-4 sec delay to simulate human typing\nconst ms = Math.floor(Math.random() * 2000) + 2000;\nawait new Promise(r => setTimeout(r, ms));\n\n// Track when Andrea sent to this phone (for bot detection)\nif (!staticData.lastSentAt) staticData.lastSentAt = {};\nif (phone) {\n  staticData.lastSentAt[phone] = Date.now();\n  const keys = Object.keys(staticData.lastSentAt);\n  if (keys.length > 300) keys.slice(0, keys.length - 300).forEach(k => delete staticData.lastSentAt[k]);\n}\nreturn $input.all();\n"
-      }
+      ]
     },
     {
+      "parameters": {
+        "jsCode": "\nconst ai = $('Extraer respuesta AI').item.json;\nconst clientPhone = ai.phone || '';\nconst clientName  = ai.pushName || 'Cliente';\nconst motivo      = (ai.motivoLlamada || 'consulta de seguros').slice(0, 100);\n\nconst twimlUrl =\n  `https://n8n-n8n.78s07r.easypanel.host/webhook/lucy-twiml` +\n  `?clientPhone=${encodeURIComponent(clientPhone)}` +\n  `&clientName=${encodeURIComponent(clientName)}` +\n  `&topic=${encodeURIComponent(motivo)}`;\n\nconst qs = (o) => Object.entries(o).map(([k,v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&');\n\ntry {\n  const resp = await fetch('https://api.twilio.com/2010-04-01/Accounts/TU_TWILIO_ACCOUNT_SID/Calls', {\n    method: 'POST',\n    headers: {\n      'Authorization': 'Basic TU_TWILIO_AUTH_TOKEN_BASE64',\n      'Content-Type': 'application/x-www-form-urlencoded'\n    },\n    body: qs({ To: '+16155467023', From: '+14079555784', Url: twimlUrl })\n  });\n  const data = await resp.json();\n  const sid = data?.sid || '';\n  return [{ json: { twilioQueued: true, callSid: sid, to: '+16155467023', clientPhone } }];\n} catch(e) {\n  return [{ json: { twilioError: e.message, clientPhone } }];\n}\n"
+      },
       "id": "node-twilio-call",
       "name": "Twilio Llamar a Dayana",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2620,
+        2624,
         480
-      ],
-      "parameters": {
-        "jsCode": "\nconst ai = $('Extraer respuesta AI').item.json;\nconst clientPhone = ai.phone || '';\nconst clientName  = ai.pushName || 'Cliente';\nconst motivo      = (ai.motivoLlamada || 'consulta de seguros').slice(0, 100);\n\nconst twimlUrl =\n  `https://n8n-n8n.78s07r.easypanel.host/webhook/lucy-twiml` +\n  `?clientPhone=${encodeURIComponent(clientPhone)}` +\n  `&clientName=${encodeURIComponent(clientName)}` +\n  `&topic=${encodeURIComponent(motivo)}`;\n\nconst qs = (o) => Object.entries(o).map(([k,v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&');\n\ntry {\n  const resp = await fetch('https://api.twilio.com/2010-04-01/Accounts/TU_TWILIO_ACCOUNT_SID/Calls', {\n    method: 'POST',\n    headers: {\n      'Authorization': 'Basic TU_TWILIO_AUTH_TOKEN_BASE64',\n      'Content-Type': 'application/x-www-form-urlencoded'\n    },\n    body: qs({ To: '+16155467023', From: '+14079555784', Url: twimlUrl })\n  });\n  const data = await resp.json();\n  const sid = data?.sid || '';\n  return [{ json: { twilioQueued: true, callSid: sid, to: '+16155467023', clientPhone } }];\n} catch(e) {\n  return [{ json: { twilioError: e.message, clientPhone } }];\n}\n"
-      }
+      ]
     },
     {
+      "parameters": {
+        "jsCode": "\nconst staticData = $getWorkflowStaticData('global');\nconst phone = $('Extraer datos').item.json.phone;\nconst caption = $('Extraer datos').item.json.mediaCaption || '[imagen/documento]';\nconst aiResp = $('OpenAI Vision').item.json.visionResponse || '';\n\nif (phone) {\n  if (!staticData[phone]) staticData[phone] = [];\n  staticData[phone].push({ role: 'user', content: caption });\n  if (aiResp) staticData[phone].push({ role: 'assistant', content: aiResp });\n  if (staticData[phone].length > 30) staticData[phone] = staticData[phone].slice(-30);\n}\nreturn $input.all();\n"
+      },
       "id": "node-save-vision-history",
       "name": "Guardar historial media",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1740,
-        220
+        1744,
+        224
       ],
-      "parameters": {
-        "jsCode": "\nconst staticData = $getWorkflowStaticData('global');\nconst phone = $('Extraer datos').item.json.phone;\nconst caption = $('Extraer datos').item.json.mediaCaption || '[imagen/documento]';\nconst aiResp = $('OpenAI Vision').item.json.visionResponse || '';\n\nif (phone) {\n  if (!staticData[phone]) staticData[phone] = [];\n  staticData[phone].push({ role: 'user', content: caption });\n  if (aiResp) staticData[phone].push({ role: 'assistant', content: aiResp });\n  if (staticData[phone].length > 30) staticData[phone] = staticData[phone].slice(-30);\n}\nreturn $input.all();\n"
-      },
       "continueOnFail": true
     },
     {
+      "parameters": {
+        "jsCode": "\nconst staticData = $getWorkflowStaticData('global');\nif (!staticData.pausedContacts) staticData.pausedContacts = {};\nconst phone = $('Extraer respuesta AI').item.json.phone;\nif (phone) {\n  staticData.pausedContacts[phone] = true;\n  try {\n    const searchResp = await fetch('https://services.leadconnectorhq.com/contacts/?locationId=IYslAlpLthyYmzorDhnP&query=' + encodeURIComponent('+' + phone), {\n      method: 'GET',\n      headers: { 'Authorization': 'Bearer pit-b467b97c-de3a-4321-bb0f-e9f09c380faf', 'Version': '2021-07-28' }\n    });\n    const searchData = await searchResp.json();\n    const contacts = searchData.contacts || [];\n    if (contacts.length > 0) {\n      const contactId = contacts[0].id;\n      const newTags = [...new Set([...(contacts[0].tags || []), 'lucy-paused'])];\n      await fetch('https://services.leadconnectorhq.com/contacts/' + contactId, {\n        method: 'PUT',\n        headers: { 'Authorization': 'Bearer pit-b467b97c-de3a-4321-bb0f-e9f09c380faf', 'Version': '2021-07-28', 'Content-Type': 'application/json' },\n        body: JSON.stringify({ tags: newTags })\n      });\n    }\n  } catch(e) { /* best-effort */ }\n}\nreturn $input.all();\n"
+      },
       "id": "node-pause-human",
       "name": "Pausar contacto (humano)",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3060,
+        3072,
         560
-      ],
-      "parameters": {
-        "jsCode": "\nconst staticData = $getWorkflowStaticData('global');\nif (!staticData.pausedContacts) staticData.pausedContacts = {};\nconst phone = $('Extraer respuesta AI').item.json.phone;\nif (phone) {\n  staticData.pausedContacts[phone] = true;\n  try {\n    const searchResp = await fetch('https://services.leadconnectorhq.com/contacts/?locationId=IYslAlpLthyYmzorDhnP&query=' + encodeURIComponent('+' + phone), {\n      method: 'GET',\n      headers: { 'Authorization': 'Bearer pit-b467b97c-de3a-4321-bb0f-e9f09c380faf', 'Version': '2021-07-28' }\n    });\n    const searchData = await searchResp.json();\n    const contacts = searchData.contacts || [];\n    if (contacts.length > 0) {\n      const contactId = contacts[0].id;\n      const newTags = [...new Set([...(contacts[0].tags || []), 'lucy-paused'])];\n      await fetch('https://services.leadconnectorhq.com/contacts/' + contactId, {\n        method: 'PUT',\n        headers: { 'Authorization': 'Bearer pit-b467b97c-de3a-4321-bb0f-e9f09c380faf', 'Version': '2021-07-28', 'Content-Type': 'application/json' },\n        body: JSON.stringify({ tags: newTags })\n      });\n    }\n  } catch(e) { /* best-effort */ }\n}\nreturn $input.all();\n"
-      }
+      ]
     },
     {
-      "id": "node-is-audio",
-      "name": "¿Es audio?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2,
-      "position": [
-        1080,
-        100
-      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -1354,46 +1314,46 @@
             }
           ],
           "combinator": "or"
-        }
-      }
+        },
+        "options": {}
+      },
+      "id": "node-is-audio",
+      "name": "¿Es audio?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1088,
+        112
+      ]
     },
     {
       "parameters": {
-        "jsCode": "\n// Merge Evolution API base64 response with original message data\nconst apiResp = $input.first().json;\nconst orig = $('Extraer datos').item.json;\n\nconst base64 = apiResp.base64 || '';\nconst isAudio = orig.messageType === 'audioMessage' || orig.messageType === 'pttMessage';\nconst defaultMimetype = isAudio ? 'audio/ogg; codecs=opus' : 'image/jpeg';\nconst mimetype = apiResp.mimetype || defaultMimetype;\n\nreturn [{ json: {\n  ...orig,\n  base64,\n  mimetype,\n  mediaError: base64 ? undefined : 'base64_empty_api'\n}}];\n",
-        "mode": "runOnceForAllItems"
+        "jsCode": "\n// Merge Evolution API base64 response with original message data\nconst apiResp = $input.first().json;\nconst orig = $('Extraer datos').item.json;\n\nconst base64 = apiResp.base64 || '';\nconst isAudio = orig.messageType === 'audioMessage' || orig.messageType === 'pttMessage';\nconst defaultMimetype = isAudio ? 'audio/ogg; codecs=opus' : 'image/jpeg';\nconst mimetype = apiResp.mimetype || defaultMimetype;\n\nreturn [{ json: {\n  ...orig,\n  base64,\n  mimetype,\n  mediaError: base64 ? undefined : 'base64_empty_api'\n}}];\n"
       },
       "id": "node-merge-media",
       "name": "Merge Media Response",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1080,
+        1088,
         160
       ],
       "continueOnFail": true
     },
     {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\nconst base64Clean = (item.base64 || '').replace(/^data:[^;]+;base64,/, '');\nconst mimetype = item.mimetype || 'audio/ogg; codecs=opus';\nlet ext = 'ogg';\nif (mimetype.includes('mp4')) ext = 'mp4';\nelse if (mimetype.includes('mp3') || mimetype.includes('mpeg')) ext = 'mp3';\nelse if (mimetype.includes('webm')) ext = 'webm';\nelse if (mimetype.includes('wav')) ext = 'wav';\nelse if (mimetype.includes('m4a')) ext = 'm4a';\n\nreturn [{\n  json: {\n    phone: item.phone,\n    remoteJid: item.remoteJid,\n    pushName: item.pushName,\n    messageId: item.messageId\n  },\n  binary: {\n    audioFile: {\n      data: base64Clean,\n      mimeType: mimetype,\n      fileName: 'audio.' + ext\n    }\n  }\n}];"
+      },
       "id": "node-prep-audio",
       "name": "Prep Audio Binary",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1320,
-        60
-      ],
-      "parameters": {
-        "jsCode": "const item = $input.first().json;\nconst base64Clean = (item.base64 || '').replace(/^data:[^;]+;base64,/, '');\nconst mimetype = item.mimetype || 'audio/ogg; codecs=opus';\nlet ext = 'ogg';\nif (mimetype.includes('mp4')) ext = 'mp4';\nelse if (mimetype.includes('mp3') || mimetype.includes('mpeg')) ext = 'mp3';\nelse if (mimetype.includes('webm')) ext = 'webm';\nelse if (mimetype.includes('wav')) ext = 'wav';\nelse if (mimetype.includes('m4a')) ext = 'm4a';\n\nreturn [{\n  json: {\n    phone: item.phone,\n    remoteJid: item.remoteJid,\n    pushName: item.pushName,\n    messageId: item.messageId\n  },\n  binary: {\n    audioFile: {\n      data: base64Clean,\n      mimeType: mimetype,\n      fileName: 'audio.' + ext\n    }\n  }\n}];"
-      }
+        1328,
+        64
+      ]
     },
     {
-      "id": "node-whisper-api",
-      "name": "Whisper API",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4,
-      "position": [
-        1560,
-        60
-      ],
       "parameters": {
         "method": "POST",
         "url": "https://api.openai.com/v1/audio/transcriptions",
@@ -1409,12 +1369,10 @@
               "inputDataFieldName": "audioFile"
             },
             {
-              "parameterType": "formData",
               "name": "model",
               "value": "whisper-1"
             },
             {
-              "parameterType": "formData",
               "name": "language",
               "value": "es"
             }
@@ -1422,6 +1380,14 @@
         },
         "options": {}
       },
+      "id": "node-whisper-api",
+      "name": "Whisper API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        1568,
+        64
+      ],
       "credentials": {
         "httpHeaderAuth": {
           "id": "o7elQREBA8IXuLxW",
@@ -1431,41 +1397,32 @@
       "continueOnFail": true
     },
     {
+      "parameters": {
+        "jsCode": "const resp = $input.first().json;\nconst meta = $('Prep Audio Binary').item.json;\nconst transcription = resp.text || '';\nreturn [{\n  json: {\n    phone: meta.phone,\n    remoteJid: meta.remoteJid,\n    pushName: meta.pushName,\n    messageId: meta.messageId,\n    message: transcription || '[audio no procesado]',\n    transcription: transcription,\n    messageType: 'text',\n    hasMedia: false\n  }\n}];"
+      },
       "id": "node-format-transcripcion",
       "name": "Format Transcripcion",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1800,
-        60
-      ],
-      "parameters": {
-        "jsCode": "const resp = $input.first().json;\nconst meta = $('Prep Audio Binary').item.json;\nconst transcription = resp.text || '';\nreturn [{\n  json: {\n    phone: meta.phone,\n    remoteJid: meta.remoteJid,\n    pushName: meta.pushName,\n    messageId: meta.messageId,\n    message: transcription || '[audio no procesado]',\n    transcription: transcription,\n    messageType: 'text',\n    hasMedia: false\n  }\n}];"
-      }
+        1808,
+        64
+      ]
     },
     {
+      "parameters": {
+        "jsCode": "const phone = $('Extraer datos').item.json.phone;\nconst pushName = $('Extraer datos').item.json.pushName || 'Cliente';\nconst reservarInfo = $('Extraer respuesta AI').item.json.reservarInfo || '';\nconst reagendarInfo = $('Extraer respuesta AI').item.json.reagendarInfo || '';\nconst cancelarRequested = $('Extraer respuesta AI').item.json.cancelarRequested || false;\nconst EVO_HOST = 'n8n-evolution-api.78s07r.easypanel.host';\nconst EVO_INSTANCE = 'Dayana%20Munoz';\nconst evoUrl = 'https://' + EVO_HOST + '/message/sendText/' + EVO_INSTANCE;\nconst base = { phone, pushName, evoUrl, ghlLocationId: 'IYslAlpLthyYmzorDhnP', ghlCalendarId: 'xyMoZ5iLareyhwQNijO5', royPhone: '16155467023' };\n\n// CANCELAR\nif (cancelarRequested) return [{ json: { ...base, action: 'cancelar' } }];\n\n// Helper: parse date\nconst parseDateTime = (info) => {\n  if (!info || !info.includes('T')) return null;\n  const [datePart, timePart] = info.split('T');\n  const [year, month, day] = datePart.split('-').map(Number);\n  const [hour, minute] = (timePart || '09:00').split(':').map(Number);\n    // Dynamic ET offset: EDT=UTC-4 (Mar 2nd Sun → Nov 1st Sun), EST=UTC-5\n  const _dstStart = new Date(year, 2, 1); _dstStart.setDate(1 + (7 - _dstStart.getDay() + 0) % 7 + 7);\n  const _dstEnd   = new Date(year, 10, 1); _dstEnd.setDate(1 + (7 - _dstEnd.getDay()) % 7);\n  const _etOffset = (new Date(year, month-1, day) >= _dstStart && new Date(year, month-1, day) < _dstEnd) ? 4 : 5;\n  const startUTC = new Date(Date.UTC(year, month-1, day, hour + _etOffset, minute));\n  const endUTC = new Date(startUTC.getTime() + 3600000);\n  const MONTHS = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];\n  const DAYS = ['domingo','lunes','martes','miercoles','jueves','viernes','sabado'];\n  const dateObj = new Date(Date.UTC(year, month-1, day));\n  const ampm = hour < 12 ? 'AM' : 'PM';\n  const h12 = hour%12||12;\n  const dateStr = DAYS[dateObj.getUTCDay()]+' '+day+' de '+MONTHS[month-1]+' a las '+h12+':'+String(minute).padStart(2,'0')+' '+ampm+' ET';\n  return { startTime: startUTC.toISOString(), endTime: endUTC.toISOString(), dateStr };\n};\n\n// REAGENDAR\nif (reagendarInfo) {\n  const parsed = parseDateTime(reagendarInfo);\n  if (parsed) return [{ json: { ...base, action: 'reagendar', ...parsed, apptTitle: 'Cita reagendada - '+pushName } }];\n}\n\n// NUEVA CITA / LINK\nif (!reservarInfo || !reservarInfo.includes('T')) {\n  return [{ json: { ...base, action: 'link', ghlCalendarId: 'xyMoZ5iLareyhwQNijO5' } }];\n}\n\nconst parsed = parseDateTime(reservarInfo);\nif (!parsed) return [{ json: { ...base, action: 'link' } }];\nreturn [{ json: { ...base, action: 'cita', ...parsed, apptTitle: 'Cita con '+pushName } }];"
+      },
       "id": "node-parsear-cita",
       "name": "Parsear cita",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2840,
-        840
-      ],
-      "parameters": {
-        "mode": "runOnceForAllItems",
-        "jsCode": "const phone = $('Extraer datos').item.json.phone;\nconst pushName = $('Extraer datos').item.json.pushName || 'Cliente';\nconst reservarInfo = $('Extraer respuesta AI').item.json.reservarInfo || '';\nconst reagendarInfo = $('Extraer respuesta AI').item.json.reagendarInfo || '';\nconst cancelarRequested = $('Extraer respuesta AI').item.json.cancelarRequested || false;\nconst EVO_HOST = 'n8n-evolution-api.78s07r.easypanel.host';\nconst EVO_INSTANCE = 'Dayana%20Munoz';\nconst evoUrl = 'https://' + EVO_HOST + '/message/sendText/' + EVO_INSTANCE;\nconst base = { phone, pushName, evoUrl, ghlLocationId: 'IYslAlpLthyYmzorDhnP', ghlCalendarId: 'xyMoZ5iLareyhwQNijO5', royPhone: '16155467023' };\n\n// CANCELAR\nif (cancelarRequested) return [{ json: { ...base, action: 'cancelar' } }];\n\n// Helper: parse date\nconst parseDateTime = (info) => {\n  if (!info || !info.includes('T')) return null;\n  const [datePart, timePart] = info.split('T');\n  const [year, month, day] = datePart.split('-').map(Number);\n  const [hour, minute] = (timePart || '09:00').split(':').map(Number);\n    // Dynamic ET offset: EDT=UTC-4 (Mar 2nd Sun → Nov 1st Sun), EST=UTC-5\n  const _dstStart = new Date(year, 2, 1); _dstStart.setDate(1 + (7 - _dstStart.getDay() + 0) % 7 + 7);\n  const _dstEnd   = new Date(year, 10, 1); _dstEnd.setDate(1 + (7 - _dstEnd.getDay()) % 7);\n  const _etOffset = (new Date(year, month-1, day) >= _dstStart && new Date(year, month-1, day) < _dstEnd) ? 4 : 5;\n  const startUTC = new Date(Date.UTC(year, month-1, day, hour + _etOffset, minute));\n  const endUTC = new Date(startUTC.getTime() + 3600000);\n  const MONTHS = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];\n  const DAYS = ['domingo','lunes','martes','miercoles','jueves','viernes','sabado'];\n  const dateObj = new Date(Date.UTC(year, month-1, day));\n  const ampm = hour < 12 ? 'AM' : 'PM';\n  const h12 = hour%12||12;\n  const dateStr = DAYS[dateObj.getUTCDay()]+' '+day+' de '+MONTHS[month-1]+' a las '+h12+':'+String(minute).padStart(2,'0')+' '+ampm+' ET';\n  return { startTime: startUTC.toISOString(), endTime: endUTC.toISOString(), dateStr };\n};\n\n// REAGENDAR\nif (reagendarInfo) {\n  const parsed = parseDateTime(reagendarInfo);\n  if (parsed) return [{ json: { ...base, action: 'reagendar', ...parsed, apptTitle: 'Cita reagendada - '+pushName } }];\n}\n\n// NUEVA CITA / LINK\nif (!reservarInfo || !reservarInfo.includes('T')) {\n  return [{ json: { ...base, action: 'link', ghlCalendarId: 'xyMoZ5iLareyhwQNijO5' } }];\n}\n\nconst parsed = parseDateTime(reservarInfo);\nif (!parsed) return [{ json: { ...base, action: 'link' } }];\nreturn [{ json: { ...base, action: 'cita', ...parsed, apptTitle: 'Cita con '+pushName } }];"
-      }
+        2848,
+        848
+      ]
     },
     {
-      "id": "node-tiene-fecha",
-      "name": "¿Tiene fecha?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        3060,
-        840
-      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -1488,31 +1445,21 @@
           "combinator": "and"
         },
         "options": {}
-      }
+      },
+      "id": "node-tiene-fecha",
+      "name": "¿Tiene fecha?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3072,
+        848
+      ]
     },
     {
-      "id": "node-ghl-buscar-contacto",
-      "name": "GHL Buscar Contacto",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        3280,
-        780
-      ],
       "parameters": {
-        "method": "GET",
         "url": "https://services.leadconnectorhq.com/contacts/search",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Version",
-              "value": "2021-07-28"
-            }
-          ]
-        },
         "sendQuery": true,
         "queryParameters": {
           "parameters": [
@@ -1526,8 +1473,25 @@
             }
           ]
         },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Version",
+              "value": "2021-07-28"
+            }
+          ]
+        },
         "options": {}
       },
+      "id": "node-ghl-buscar-contacto",
+      "name": "GHL Buscar Contacto",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3280,
+        784
+      ],
       "credentials": {
         "httpHeaderAuth": {
           "id": "UwCXV9FRW67rK9mb",
@@ -1536,28 +1500,19 @@
       }
     },
     {
+      "parameters": {
+        "jsCode": "const ghlResp = $input.first().json;\nconst p = $('Parsear cita').item.json;\nconst contact = ghlResp.contacts && ghlResp.contacts[0];\nconst contactId = contact ? contact.id : '';\n\nreturn [{ json: {\n  contactId,\n  phone: p.phone, pushName: p.pushName, dateStr: p.dateStr,\n  startTime: p.startTime, endTime: p.endTime,\n  ghlLocationId: p.ghlLocationId, ghlCalendarId: p.ghlCalendarId,\n  apptTitle: p.apptTitle, evoUrl: p.evoUrl, royPhone: p.royPhone\n}}];"
+      },
       "id": "node-extraer-contacto-id",
       "name": "Extraer contacto ID",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3500,
-        780
-      ],
-      "parameters": {
-        "mode": "runOnceForAllItems",
-        "jsCode": "const ghlResp = $input.first().json;\nconst p = $('Parsear cita').item.json;\nconst contact = ghlResp.contacts && ghlResp.contacts[0];\nconst contactId = contact ? contact.id : '';\n\nreturn [{ json: {\n  contactId,\n  phone: p.phone, pushName: p.pushName, dateStr: p.dateStr,\n  startTime: p.startTime, endTime: p.endTime,\n  ghlLocationId: p.ghlLocationId, ghlCalendarId: p.ghlCalendarId,\n  apptTitle: p.apptTitle, evoUrl: p.evoUrl, royPhone: p.royPhone\n}}];"
-      }
+        3504,
+        784
+      ]
     },
     {
-      "id": "node-ghl-crear-cita",
-      "name": "GHL Crear Cita",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        3720,
-        780
-      ],
       "parameters": {
         "method": "POST",
         "url": "https://services.leadconnectorhq.com/calendars/events/appointments",
@@ -1581,6 +1536,14 @@
         "jsonBody": "={{ JSON.stringify({ calendarId: $json.ghlCalendarId, locationId: $json.ghlLocationId, contactId: $json.contactId, startTime: $json.startTime, endTime: $json.endTime, title: $json.apptTitle, appointmentStatus: 'confirmed' }) }}",
         "options": {}
       },
+      "id": "node-ghl-crear-cita",
+      "name": "GHL Crear Cita",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3728,
+        784
+      ],
       "credentials": {
         "httpHeaderAuth": {
           "id": "UwCXV9FRW67rK9mb",
@@ -1589,14 +1552,6 @@
       }
     },
     {
-      "id": "node-appt-creada",
-      "name": "¿Appt creada?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        3940,
-        780
-      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -1619,17 +1574,17 @@
           "combinator": "and"
         },
         "options": {}
-      }
+      },
+      "id": "node-appt-creada",
+      "name": "¿Appt creada?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3952,
+        784
+      ]
     },
     {
-      "id": "node-notificar-cita-roy",
-      "name": "Notificar cita a Roy",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        4160,
-        700
-      ],
       "parameters": {
         "method": "POST",
         "url": "https://n8n-evolution-api.78s07r.easypanel.host/message/sendText/Dayana%20Munoz",
@@ -1649,6 +1604,14 @@
         "jsonBody": "={{ JSON.stringify({ number: $('Extraer contacto ID').item.json.royPhone, text: 'Nueva cita!\\nCliente: ' + $('Extraer contacto ID').item.json.pushName + '\\nFecha: ' + $('Extraer contacto ID').item.json.dateStr }) }}",
         "options": {}
       },
+      "id": "node-notificar-cita-roy",
+      "name": "Notificar cita a Roy",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4160,
+        704
+      ],
       "credentials": {
         "httpHeaderAuth": {
           "id": "6xnHQwH4411Vc2je",
@@ -1657,14 +1620,6 @@
       }
     },
     {
-      "id": "node-confirmar-cita-cliente",
-      "name": "Confirmar cita cliente",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        4160,
-        860
-      ],
       "parameters": {
         "method": "POST",
         "url": "https://n8n-evolution-api.78s07r.easypanel.host/message/sendText/Dayana%20Munoz",
@@ -1684,6 +1639,14 @@
         "jsonBody": "={{ JSON.stringify({ number: $('Extraer contacto ID').item.json.phone, text: 'Listo! Tu cita esta confirmada para el ' + $('Extraer contacto ID').item.json.dateStr + '\\nTienes alguna pregunta?' }) }}",
         "options": {}
       },
+      "id": "node-confirmar-cita-cliente",
+      "name": "Confirmar cita cliente",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4160,
+        864
+      ],
       "credentials": {
         "httpHeaderAuth": {
           "id": "6xnHQwH4411Vc2je",
@@ -1692,14 +1655,6 @@
       }
     },
     {
-      "id": "node-enviar-link-booking",
-      "name": "Enviar link booking",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        3280,
-        980
-      ],
       "parameters": {
         "method": "POST",
         "url": "https://n8n-evolution-api.78s07r.easypanel.host/message/sendText/Dayana%20Munoz",
@@ -1719,6 +1674,14 @@
         "jsonBody": "={{ JSON.stringify({ number: $json.phone, text: 'Aqui esta el link para agendar tu cita con Roy\\nhttps://api.leadconnectorhq.com/widget/booking/xyMoZ5iLareyhwQNijO5' }) }}",
         "options": {}
       },
+      "id": "node-enviar-link-booking",
+      "name": "Enviar link booking",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3280,
+        992
+      ],
       "credentials": {
         "httpHeaderAuth": {
           "id": "6xnHQwH4411Vc2je",
@@ -1727,14 +1690,6 @@
       }
     },
     {
-      "id": "node-cita-no-creada",
-      "name": "Cita no creada (fallback)",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        4160,
-        980
-      ],
       "parameters": {
         "method": "POST",
         "url": "https://n8n-evolution-api.78s07r.easypanel.host/message/sendText/Dayana%20Munoz",
@@ -1754,6 +1709,14 @@
         "jsonBody": "={{ JSON.stringify({ number: $('Extraer contacto ID').item.json.phone, text: 'Gracias ' + $('Extraer contacto ID').item.json.pushName + '! Roy te contactara para confirmar tu cita' }) }}",
         "options": {}
       },
+      "id": "node-cita-no-creada",
+      "name": "Cita no creada (fallback)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4160,
+        992
+      ],
       "credentials": {
         "httpHeaderAuth": {
           "id": "6xnHQwH4411Vc2je",
@@ -1762,50 +1725,51 @@
       }
     },
     {
+      "parameters": {
+        "jsCode": "const body = $input.first().json?.body || {};\nconst fromMe = body?.data?.key?.fromMe === true;\nconst event = body?.event === 'messages.upsert';\nconst remoteJid = body?.data?.key?.remoteJid || '';\nconst isGroup = remoteJid.includes('@g.us');\nconst msg = (body?.data?.message?.conversation || body?.data?.message?.extendedTextMessage?.text || '').toLowerCase().trim();\n\n// Mensaje de cliente (fromMe=false) que llegó al path FALSE de \"Es mensaje valido?\"\n// Causa real: algunos eventos messages.upsert con campos raros fallan las condiciones\n// Solución: reenviar al pipeline normal en vez de silenciar\nif (!fromMe) {\n  return (event && !isGroup) ? $input.all() : [];\n}\n\nif (!event || isGroup) return [];\n\n// Ecos de confirmaciones enviadas por el propio bot — ignorar para no re-pausar\nconst botOwnPhrases = [\n  '▶️', '⏸️', 'aquí estoy para ayudarte', 'aqui estoy para ayudarte',\n  'andrea no responderá', 'andrea no respondera',\n  'reanudado. andrea', 'pausado. andrea',\n  'entendido, no te escribiré', 'entendido, no te escribire',\n  'de vuelta! aquí', 'de vuelta! aqui'\n];\nif (botOwnPhrases.some(p => msg.includes(p))) return [];\n\n// Proteccion: si el contacto fue continuado hace menos de 30s, no re-pausar\nconst staticData = $getWorkflowStaticData('global');\nif (!staticData.justContinued) staticData.justContinued = {};\nconst targetPhone = remoteJid.split('@')[0];\nconst justContinuedAt = staticData.justContinued[targetPhone] || 0;\nif (Date.now() - justContinuedAt < 30000) return [];\n// Si el bot (Andrea) envió un mensaje a este contacto en los últimos 2 minutos,\n// este evento fromMe=true es el eco de la propia respuesta del bot — NO es Dayana respondiendo.\nconst lastBotSentAt = (staticData.lastSentAt || {})[targetPhone] || 0;\nif (Date.now() - lastBotSentAt < 120000) return [];\n\n\nconst commandWords = ['stop','continue','continuar','reanudar','no me escribas','no me molestes','unsubscribe','borrame','no quiero mensajes','no me contactes','no me llames','borra mi numero','no mas mensajes'];\nconst hasCommand = commandWords.some(w => msg.includes(w));\n\n// Comando de control — pasar al flujo STOP/CONTINUE\nif (hasCommand) return $input.all();\n\n// Dayana respondió directamente a un cliente — pausar ese contacto\nif (targetPhone) {\n  if (!staticData.pausedContacts) staticData.pausedContacts = {};\n  staticData.pausedContacts[targetPhone] = true;\n  const GHL_KEY = 'pit-b467b97c-de3a-4321-bb0f-e9f09c380faf';\n  const GHL_LOC = 'IYslAlpLthyYmzorDhnP';\n  const H = { 'Authorization': 'Bearer ' + GHL_KEY, 'Version': '2021-07-28', 'Content-Type': 'application/json' };\n  try {\n    const sd = await $helpers.httpRequest({ method: 'GET', url: 'https://services.leadconnectorhq.com/contacts/?locationId=' + GHL_LOC + '&query=' + encodeURIComponent('+' + targetPhone), headers: H });\n    const contact = (sd.contacts || [])[0];\n    if (contact?.id) {\n      const newTags = [...new Set([...(contact.tags || []), 'lucy-paused'])];\n      await $helpers.httpRequest({ method: 'PUT', url: 'https://services.leadconnectorhq.com/contacts/' + contact.id, headers: H, body: { tags: newTags } });\n    }\n  } catch(e) {}\n}\n\nreturn [];"
+      },
       "id": "node-roy-cmd-filter",
       "name": "¿Comando de Dayana?",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        420,
-        180
+        432,
+        192
       ],
-      "parameters": {
-        "jsCode": "const body = $input.first().json?.body || {};\nconst fromMe = body?.data?.key?.fromMe === true;\nconst event = body?.event === 'messages.upsert';\nconst remoteJid = body?.data?.key?.remoteJid || '';\nconst isGroup = remoteJid.includes('@g.us');\nconst msg = (body?.data?.message?.conversation || body?.data?.message?.extendedTextMessage?.text || '').toLowerCase().trim();\n\n// Mensaje de cliente (fromMe=false) que llegó al path FALSE de \"Es mensaje valido?\"\n// Causa real: algunos eventos messages.upsert con campos raros fallan las condiciones\n// Solución: reenviar al pipeline normal en vez de silenciar\nif (!fromMe) {\n  return (event && !isGroup) ? $input.all() : [];\n}\n\nif (!event || isGroup) return [];\n\n// Ecos de confirmaciones enviadas por el propio bot — ignorar para no re-pausar\nconst botOwnPhrases = [\n  '▶️', '⏸️', 'aquí estoy para ayudarte', 'aqui estoy para ayudarte',\n  'andrea no responderá', 'andrea no respondera',\n  'reanudado. andrea', 'pausado. andrea',\n  'entendido, no te escribiré', 'entendido, no te escribire',\n  'de vuelta! aquí', 'de vuelta! aqui'\n];\nif (botOwnPhrases.some(p => msg.includes(p))) return [];\n\n// Proteccion: si el contacto fue continuado hace menos de 30s, no re-pausar\nconst staticData = $getWorkflowStaticData('global');\nif (!staticData.justContinued) staticData.justContinued = {};\nconst targetPhone = remoteJid.split('@')[0];\nconst justContinuedAt = staticData.justContinued[targetPhone] || 0;\nif (Date.now() - justContinuedAt < 30000) return [];\n\nconst commandWords = ['stop','continue','continuar','reanudar','no me escribas','no me molestes','unsubscribe','borrame','no quiero mensajes','no me contactes','no me llames','borra mi numero','no mas mensajes'];\nconst hasCommand = commandWords.some(w => msg.includes(w));\n\n// Comando de control — pasar al flujo STOP/CONTINUE\nif (hasCommand) return $input.all();\n\n// Dayana respondió directamente a un cliente — pausar ese contacto\nif (targetPhone) {\n  if (!staticData.pausedContacts) staticData.pausedContacts = {};\n  staticData.pausedContacts[targetPhone] = true;\n  const GHL_KEY = 'pit-b467b97c-de3a-4321-bb0f-e9f09c380faf';\n  const GHL_LOC = 'IYslAlpLthyYmzorDhnP';\n  const H = { 'Authorization': 'Bearer ' + GHL_KEY, 'Version': '2021-07-28', 'Content-Type': 'application/json' };\n  try {\n    const sr = await fetch('https://services.leadconnectorhq.com/contacts/?locationId=' + GHL_LOC + '&query=' + encodeURIComponent('+' + targetPhone), { method: 'GET', headers: H });\n    const sd = await sr.json();\n    const contact = (sd.contacts || [])[0];\n    if (contact?.id) {\n      const newTags = [...new Set([...(contact.tags || []), 'lucy-paused'])];\n      await fetch('https://services.leadconnectorhq.com/contacts/' + contact.id, { method: 'PUT', headers: H, body: JSON.stringify({ tags: newTags }) });\n    }\n  } catch(e) {}\n}\n\nreturn [];"
-      },
       "continueOnFail": true
     },
     {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\nconst docRequested = $('Extraer respuesta AI').item.json.docRequested;\nconst docName = ($('Extraer respuesta AI').item.json.docName || '').toLowerCase().trim();\nconst phone = $('Extraer datos').item.json.phone;\n\nif (!docRequested || !docName || !phone) return [{ json: { docSent: false, reason: 'not_requested' } }];\n\nconst EVO_HOST = 'n8n-evolution-api.78s07r.easypanel.host';\nconst EVO_INSTANCE = 'Dayana%20Munoz';\nconst EVO_KEY = '429683C4C977415CAAFCCE10F7D57E11';\n\nconst docs = {\n  'seguro_vida':      { url: 'PENDIENTE', name: 'Seguro-de-Vida-DayanaFinance.pdf' },\n  'cancer':           { url: 'PENDIENTE', name: 'Poliza-Cancer-DayanaFinance.pdf' },\n  'dental':           { url: 'PENDIENTE', name: 'Plan-Dental-DayanaFinance.pdf' },\n  'hospital':         { url: 'PENDIENTE', name: 'Hospital-Indemnity-DayanaFinance.pdf' },\n  'accidente':        { url: 'PENDIENTE', name: 'Poliza-Accidente-DayanaFinance.pdf' },\n  'catalogo_domd':    { url: 'PENDIENTE', name: 'Catalogo-Servicios-DOMDPRO.pdf' },\n  'portafolio_domd':  { url: 'PENDIENTE', name: 'Portafolio-DOMDPRO.pdf' },\n  'precios_domd':     { url: 'PENDIENTE', name: 'Precios-DOMDPRO.pdf' },\n  'finanzas':         { url: 'PENDIENTE', name: 'Plan-Financiero-DayanaFinance.pdf' }\n};\n\nconst doc = docs[docName];\nif (!doc) return [{ json: { docSent: false, reason: 'doc_key_not_found', docName } }];\nif (doc.url === 'PENDIENTE') return [{ json: { docSent: false, reason: 'url_pendiente', docName } }];\n\ntry {\n  const resp = await fetch(`https://${EVO_HOST}/message/sendMedia/${EVO_INSTANCE}`, {\n    method: 'POST',\n    headers: { 'apikey': EVO_KEY, 'Content-Type': 'application/json' },\n    body: JSON.stringify({\n      number: phone,\n      mediatype: 'document',\n      mimetype: 'application/pdf',\n      caption: doc.name.replace(/-/g,' ').replace('.pdf',''),\n      media: doc.url,\n      fileName: doc.name\n    })\n  });\n  return [{ json: { docSent: true, docName, phone } }];\n} catch(e) {\n  return [{ json: { docSent: false, error: e.message } }];\n}"
+      },
       "id": "node-doc-send",
       "name": "Enviar Documento",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
         2400,
-        1100
+        1104
       ],
-      "continueOnFail": true,
-      "parameters": {
-        "mode": "runOnceForAllItems",
-        "jsCode": "const item = $input.first().json;\nconst docRequested = $('Extraer respuesta AI').item.json.docRequested;\nconst docName = ($('Extraer respuesta AI').item.json.docName || '').toLowerCase().trim();\nconst phone = $('Extraer datos').item.json.phone;\n\nif (!docRequested || !docName || !phone) return [{ json: { docSent: false, reason: 'not_requested' } }];\n\nconst EVO_HOST = 'n8n-evolution-api.78s07r.easypanel.host';\nconst EVO_INSTANCE = 'Dayana%20Munoz';\nconst EVO_KEY = '429683C4C977415CAAFCCE10F7D57E11';\n\nconst docs = {\n  'seguro_vida':      { url: 'PENDIENTE', name: 'Seguro-de-Vida-DayanaFinance.pdf' },\n  'cancer':           { url: 'PENDIENTE', name: 'Poliza-Cancer-DayanaFinance.pdf' },\n  'dental':           { url: 'PENDIENTE', name: 'Plan-Dental-DayanaFinance.pdf' },\n  'hospital':         { url: 'PENDIENTE', name: 'Hospital-Indemnity-DayanaFinance.pdf' },\n  'accidente':        { url: 'PENDIENTE', name: 'Poliza-Accidente-DayanaFinance.pdf' },\n  'catalogo_domd':    { url: 'PENDIENTE', name: 'Catalogo-Servicios-DOMDPRO.pdf' },\n  'portafolio_domd':  { url: 'PENDIENTE', name: 'Portafolio-DOMDPRO.pdf' },\n  'precios_domd':     { url: 'PENDIENTE', name: 'Precios-DOMDPRO.pdf' },\n  'finanzas':         { url: 'PENDIENTE', name: 'Plan-Financiero-DayanaFinance.pdf' }\n};\n\nconst doc = docs[docName];\nif (!doc) return [{ json: { docSent: false, reason: 'doc_key_not_found', docName } }];\nif (doc.url === 'PENDIENTE') return [{ json: { docSent: false, reason: 'url_pendiente', docName } }];\n\ntry {\n  const resp = await fetch(`https://${EVO_HOST}/message/sendMedia/${EVO_INSTANCE}`, {\n    method: 'POST',\n    headers: { 'apikey': EVO_KEY, 'Content-Type': 'application/json' },\n    body: JSON.stringify({\n      number: phone,\n      mediatype: 'document',\n      mimetype: 'application/pdf',\n      caption: doc.name.replace(/-/g,' ').replace('.pdf',''),\n      media: doc.url,\n      fileName: doc.name\n    })\n  });\n  return [{ json: { docSent: true, docName, phone } }];\n} catch(e) {\n  return [{ json: { docSent: false, error: e.message } }];\n}"
-      }
+      "continueOnFail": true
     },
     {
+      "parameters": {
+        "jsCode": "const CONV_PROVIDER_ID = '69f3fcd67c48bcdb134e4042';\nconst phone = $('Extraer datos').item.json.phone;\nconst message = $('Extraer datos').item.json.message || '[media]';\nconst pushName = $('Extraer datos').item.json.pushName || 'Cliente';\nconst GHL_KEY = 'pit-b467b97c-de3a-4321-bb0f-e9f09c380faf';\nconst GHL_LOC = 'IYslAlpLthyYmzorDhnP';\nconst H = { 'Authorization': `Bearer ${GHL_KEY}`, 'Version': '2021-07-28', 'Content-Type': 'application/json' };\n\n// Get contactId from GHL Crear Contacto response (success or duplicate error)\nconst ghlResp = $('GHL Crear Contacto').item.json;\nlet contactId = ghlResp?.contact?.id || ghlResp?.id || '';\nif (!contactId && ghlResp?.error?.message) {\n  const m = ghlResp.error.message.match(/\"contactId\":\"([^\"]+)\"/);\n  if (m) contactId = m[1];\n}\n\n// If no contactId, search by phone (multiple formats)\nif (!contactId) {\n  const phoneVariants = ['+' + phone, phone.slice(1), phone];\n  for (const p of phoneVariants) {\n    try {\n      const s = await fetch(`https://services.leadconnectorhq.com/contacts/search?query=${encodeURIComponent(p)}&locationId=${GHL_LOC}`, { method:'GET', headers:H });\n      const d = await s.json();\n      contactId = d?.contacts?.[0]?.id || '';\n      if (contactId) break;\n    } catch(e) {}\n  }\n}\nif (!contactId) return [{ json: { synced: false, reason: 'no_contact_id' } }];\n\n// Find or create conversation\nlet convId = null;\ntry {\n  const cs = await fetch(`https://services.leadconnectorhq.com/conversations/search?locationId=${GHL_LOC}&contactId=${contactId}`, { method:'GET', headers:H });\n  const cd = await cs.json();\n  convId = cd?.conversations?.[0]?.id || null;\n} catch(e) {}\n\nif (!convId) {\n  try {\n    const cc = await fetch('https://services.leadconnectorhq.com/conversations/', {\n      method:'POST', headers:H,\n      body: JSON.stringify({ locationId: GHL_LOC, contactId, conversationProviderId: CONV_PROVIDER_ID })\n    });\n    const ccd = await cc.json();\n    convId = ccd?.conversation?.id || ccd?.id || null;\n  } catch(e) {}\n}\nif (!convId) return [{ json: { synced: false, reason: 'no_conv_id' } }];\n\n// Save convId for later use by AI response logger\nconst sd = $getWorkflowStaticData('global');\nif (!sd.ghlConvIds) sd.ghlConvIds = {};\nsd.ghlConvIds[phone] = convId;\n\n// Log inbound message\ntry {\n  await fetch('https://services.leadconnectorhq.com/conversations/messages', {\n    method:'POST', headers:H,\n    body: JSON.stringify({ type: 'Custom', conversationId: convId, message, contactId, direction: 'inbound', conversationProviderId: CONV_PROVIDER_ID })\n  });\n} catch(e) {}\n\nreturn [{ json: { synced: true, convId, contactId, phone } }];"
+      },
       "id": "node-ghl-sync-conv",
       "name": "Sync Conv GHL",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2840,
-        900
+        2848,
+        992
       ],
-      "continueOnFail": true,
-      "parameters": {
-        "mode": "runOnceForAllItems",
-        "jsCode": "const phone = $('Extraer datos').item.json.phone;\nconst message = $('Extraer datos').item.json.message || '[media]';\nconst pushName = $('Extraer datos').item.json.pushName || 'Cliente';\nconst GHL_KEY = 'pit-b467b97c-de3a-4321-bb0f-e9f09c380faf';\nconst GHL_LOC = 'IYslAlpLthyYmzorDhnP';\nconst H = { 'Authorization': `Bearer ${GHL_KEY}`, 'Version': '2021-07-28', 'Content-Type': 'application/json' };\n\n// Get contactId from GHL Crear Contacto response\nconst ghlResp = $('GHL Crear Contacto').item.json;\nlet contactId = ghlResp?.contact?.id || ghlResp?.id || '';\n\n// If no contactId, search by phone\nif (!contactId) {\n  try {\n    const s = await fetch(`https://services.leadconnectorhq.com/contacts/search?query=${encodeURIComponent('+'+phone)}&locationId=${GHL_LOC}`, { method:'GET', headers:H });\n    const d = await s.json();\n    contactId = d?.contacts?.[0]?.id || '';\n  } catch(e) {}\n}\nif (!contactId) return [{ json: { synced: false, reason: 'no_contact_id' } }];\n\n// Find or create conversation\nlet convId = null;\ntry {\n  const cs = await fetch(`https://services.leadconnectorhq.com/conversations/search?locationId=${GHL_LOC}&contactId=${contactId}`, { method:'GET', headers:H });\n  const cd = await cs.json();\n  convId = cd?.conversations?.[0]?.id || null;\n} catch(e) {}\n\nif (!convId) {\n  try {\n    const cc = await fetch('https://services.leadconnectorhq.com/conversations/', {\n      method:'POST', headers:H,\n      body: JSON.stringify({ locationId: GHL_LOC, contactId })\n    });\n    const ccd = await cc.json();\n    convId = ccd?.conversation?.id || ccd?.id || null;\n  } catch(e) {}\n}\nif (!convId) return [{ json: { synced: false, reason: 'no_conv_id' } }];\n\n// Save convId for later use by AI response logger\nconst sd = $getWorkflowStaticData('global');\nif (!sd.ghlConvIds) sd.ghlConvIds = {};\nsd.ghlConvIds[phone] = convId;\n\n// Log inbound message\ntry {\n  await fetch(`https://services.leadconnectorhq.com/conversations/${convId}/messages`, {\n    method:'POST', headers:H,\n    body: JSON.stringify({ type: 1, message, html: `<p>${message}</p>`, contactId, direction: 'inbound', attachments: [] })\n  });\n} catch(e) {}\n\nreturn [{ json: { synced: true, convId, contactId, phone } }];"
-      }
+      "continueOnFail": true
     },
     {
+      "parameters": {
+        "jsCode": "const phone = $('Extraer datos').item.json.phone;\nconst aiResponse = $('Extraer respuesta AI').item.json.cleanResponse || '';\nif (!aiResponse || !phone) return [{ json: { logged: false } }];\n\nconst GHL_KEY = 'pit-b467b97c-de3a-4321-bb0f-e9f09c380faf';\nconst H = { 'Authorization': `Bearer ${GHL_KEY}`, 'Version': '2021-07-28', 'Content-Type': 'application/json' };\n\nconst CONV_PROVIDER_ID = '69f3fcd67c48bcdb134e4042';\nconst sd = $getWorkflowStaticData('global');\nconst convId = sd?.ghlConvIds?.[phone];\nif (!convId) return [{ json: { logged: false, reason: 'no_conv_id' } }];\n\ntry {\n  await fetch('https://services.leadconnectorhq.com/conversations/messages', {\n    method:'POST', headers:H,\n    body: JSON.stringify({ type: 'Custom', conversationId: convId, message: aiResponse, direction: 'outbound', conversationProviderId: CONV_PROVIDER_ID })\n  });\n  return [{ json: { logged: true, convId, phone } }];\n} catch(e) {\n  return [{ json: { logged: false, error: e.message } }];\n}"
+      },
       "id": "node-ghl-log-ai",
       "name": "Log IA en GHL",
       "type": "n8n-nodes-base.code",
@@ -1814,21 +1778,9 @@
         2400,
         1200
       ],
-      "continueOnFail": true,
-      "parameters": {
-        "mode": "runOnceForAllItems",
-        "jsCode": "const phone = $('Extraer datos').item.json.phone;\nconst aiResponse = $('Extraer respuesta AI').item.json.cleanResponse || '';\nif (!aiResponse || !phone) return [{ json: { logged: false } }];\n\nconst GHL_KEY = 'pit-b467b97c-de3a-4321-bb0f-e9f09c380faf';\nconst H = { 'Authorization': `Bearer ${GHL_KEY}`, 'Version': '2021-07-28', 'Content-Type': 'application/json' };\n\nconst sd = $getWorkflowStaticData('global');\nconst convId = sd?.ghlConvIds?.[phone];\nif (!convId) return [{ json: { logged: false, reason: 'no_conv_id' } }];\n\ntry {\n  await fetch(`https://services.leadconnectorhq.com/conversations/${convId}/messages`, {\n    method:'POST', headers:H,\n    body: JSON.stringify({ type: 1, message: `[Andrea IA] ${aiResponse}`, html: `<p>[Andrea IA] ${aiResponse}</p>`, direction: 'outbound', attachments: [] })\n  });\n  return [{ json: { logged: true, convId, phone } }];\n} catch(e) {\n  return [{ json: { logged: false, error: e.message } }];\n}"
-      }
+      "continueOnFail": true
     },
     {
-      "id": "node-accion-cita",
-      "name": "Accion de cita?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        3060,
-        780
-      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -1851,17 +1803,17 @@
           "combinator": "or"
         },
         "options": {}
-      }
-    },
-    {
-      "id": "node-es-cancelar",
-      "name": "Es cancelar?",
+      },
+      "id": "node-accion-cita",
+      "name": "Accion de cita?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        3060,
-        900
-      ],
+        3072,
+        784
+      ]
+    },
+    {
       "parameters": {
         "conditions": {
           "options": {
@@ -1884,21 +1836,21 @@
           "combinator": "and"
         },
         "options": {}
-      }
+      },
+      "id": "node-es-cancelar",
+      "name": "Es cancelar?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3072,
+        912
+      ]
     },
     {
-      "id": "node-buscar-cita",
-      "name": "Buscar Cita GHL",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        3280,
-        780
-      ],
-      "continueOnFail": true,
       "parameters": {
-        "method": "GET",
         "url": "=https://services.leadconnectorhq.com/calendars/events/appointments?locationId=IYslAlpLthyYmzorDhnP&contactId={{ $('Extraer contacto ID').item.json.contactId }}&calendarId=xyMoZ5iLareyhwQNijO5",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -1908,60 +1860,65 @@
             }
           ]
         },
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
         "options": {}
       },
+      "id": "node-buscar-cita",
+      "name": "Buscar Cita GHL",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3280,
+        784
+      ],
       "credentials": {
         "httpHeaderAuth": {
           "id": "UwCXV9FRW67rK9mb",
           "name": "GoHighLevel — Dayana Munoz"
         }
-      }
+      },
+      "continueOnFail": true
     },
     {
+      "parameters": {
+        "jsCode": "const appts = $input.first().json.appointments || $input.first().json.items || [];\nconst parsedCita = $('Parsear cita').item.json;\nconst appt = appts[0];\nif (!appt) return [{ json: { reagendado: false, reason: 'no_appointment_found' } }];\n\nconst GHL_KEY = 'pit-b467b97c-de3a-4321-bb0f-e9f09c380faf';\nconst H = { 'Authorization': `Bearer ${GHL_KEY}`, 'Version': '2021-07-28', 'Content-Type': 'application/json' };\n\ntry {\n  const resp = await fetch(`https://services.leadconnectorhq.com/calendars/events/appointments/${appt.id}`, {\n    method: 'PUT', headers: H,\n    body: JSON.stringify({\n      startTime: parsedCita.startTime,\n      endTime: parsedCita.endTime,\n      appointmentStatus: 'confirmed',\n      title: appt.title || 'Cita reagendada'\n    })\n  });\n  const data = await resp.json();\n  return [{ json: { reagendado: true, appointmentId: appt.id, newStart: parsedCita.startTime } }];\n} catch(e) {\n  return [{ json: { reagendado: false, error: e.message } }];\n}"
+      },
       "id": "node-reagendar-cita",
       "name": "Reagendar Cita GHL",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3500,
+        3504,
         720
       ],
-      "continueOnFail": true,
-      "parameters": {
-        "mode": "runOnceForAllItems",
-        "jsCode": "const appts = $input.first().json.appointments || $input.first().json.items || [];\nconst parsedCita = $('Parsear cita').item.json;\nconst appt = appts[0];\nif (!appt) return [{ json: { reagendado: false, reason: 'no_appointment_found' } }];\n\nconst GHL_KEY = 'pit-b467b97c-de3a-4321-bb0f-e9f09c380faf';\nconst H = { 'Authorization': `Bearer ${GHL_KEY}`, 'Version': '2021-07-28', 'Content-Type': 'application/json' };\n\ntry {\n  const resp = await fetch(`https://services.leadconnectorhq.com/calendars/events/appointments/${appt.id}`, {\n    method: 'PUT', headers: H,\n    body: JSON.stringify({\n      startTime: parsedCita.startTime,\n      endTime: parsedCita.endTime,\n      appointmentStatus: 'confirmed',\n      title: appt.title || 'Cita reagendada'\n    })\n  });\n  const data = await resp.json();\n  return [{ json: { reagendado: true, appointmentId: appt.id, newStart: parsedCita.startTime } }];\n} catch(e) {\n  return [{ json: { reagendado: false, error: e.message } }];\n}"
-      }
+      "continueOnFail": true
     },
     {
+      "parameters": {
+        "jsCode": "const appts = $input.first().json.appointments || $input.first().json.items || [];\nconst appt = appts[0];\nif (!appt) return [{ json: { cancelado: false, reason: 'no_appointment_found' } }];\n\nconst GHL_KEY = 'pit-b467b97c-de3a-4321-bb0f-e9f09c380faf';\nconst H = { 'Authorization': `Bearer ${GHL_KEY}`, 'Version': '2021-07-28', 'Content-Type': 'application/json' };\n\ntry {\n  await fetch(`https://services.leadconnectorhq.com/calendars/events/appointments/${appt.id}`, {\n    method: 'DELETE', headers: H\n  });\n  return [{ json: { cancelado: true, appointmentId: appt.id } }];\n} catch(e) {\n  return [{ json: { cancelado: false, error: e.message } }];\n}"
+      },
       "id": "node-cancelar-cita",
       "name": "Cancelar Cita GHL",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3500,
-        900
+        3504,
+        912
       ],
-      "continueOnFail": true,
-      "parameters": {
-        "mode": "runOnceForAllItems",
-        "jsCode": "const appts = $input.first().json.appointments || $input.first().json.items || [];\nconst appt = appts[0];\nif (!appt) return [{ json: { cancelado: false, reason: 'no_appointment_found' } }];\n\nconst GHL_KEY = 'pit-b467b97c-de3a-4321-bb0f-e9f09c380faf';\nconst H = { 'Authorization': `Bearer ${GHL_KEY}`, 'Version': '2021-07-28', 'Content-Type': 'application/json' };\n\ntry {\n  await fetch(`https://services.leadconnectorhq.com/calendars/events/appointments/${appt.id}`, {\n    method: 'DELETE', headers: H\n  });\n  return [{ json: { cancelado: true, appointmentId: appt.id } }];\n} catch(e) {\n  return [{ json: { cancelado: false, error: e.message } }];\n}"
-      }
+      "continueOnFail": true
     },
     {
+      "parameters": {
+        "jsCode": "const phone = $json.phone;\nconst fromMe = $json.fromMe === true;\nconst message = ($json.message || '').toLowerCase().trim();\nconst GHL_KEY = 'pit-b467b97c-de3a-4321-bb0f-e9f09c380faf';\nconst GHL_LOC = 'IYslAlpLthyYmzorDhnP';\nconst EVO_HOST = 'n8n-evolution-api.78s07r.easypanel.host';\nconst EVO_KEY = '429683C4C977415CAAFCCE10F7D57E11';\nconst EVO_INSTANCE = 'Dayana%20Munoz';\nconst staticData = $getWorkflowStaticData('global');\nif (!staticData.pausedContacts) staticData.pausedContacts = {};\n\n// ── Deteccion de bot por tiempo + keywords ──\nif (!staticData.lastSentAt) staticData.lastSentAt = {};\nconst lastSent = staticData.lastSentAt[phone] || 0;\nconst msSinceLastSend = Date.now() - lastSent;\nconst botKeywords = [\n  // Auto-reply clasicos\n  'gracias por contactar','gracias por comunicarte','gracias por escribir',\n  'fuera de oficina','mensaje automático','mensaje automatico',\n  'en breve te atender','nuestro equipo te atender','horario de atención',\n  'horario de atencion','este es un mensaje automático','este es un mensaje automatico',\n  'respuesta automática','respuesta automatica','auto-reply','automated message',\n  'outside business hours','outside of business hours','bot de atención',\n  'bot de atencion','currently unavailable','will get back to you',\n  'te responderemos a la brevedad','en horario de oficina',\n  // Bots que se presentan como asistentes\n  'soy la asistente de','soy tu asistente','asistente virtual de',\n  'la asistente de','soy el asistente de','soy el bot de',\n  'soy una asistente','soy un asistente','soy la ia de',\n  'quieres mas informacion','quieres más información',\n  'puedo ayudarte con información','te puedo dar información'\n];\nconst hasBotKeyword = botKeywords.some(kw => message.includes(kw));\nif (msSinceLastSend < 6000 && hasBotKeyword) {\n  return []; // Bot auto-reply detectado — ignorar sin pausar el contacto\n}\n\n\n\nconst stopWords = ['stop','no me escribas','no me molestes','unsubscribe','no me contactes','no mas mensajes','no más mensajes','borra mi numero','borrame','no quiero mensajes','no me llames'];\nconst continueWords = ['continuar','continue','reanudar'];\n\nconst H = { 'Authorization': 'Bearer ' + GHL_KEY, 'Version': '2021-07-28', 'Content-Type': 'application/json' };\n\nasync function sendWA(to, text) {\n  try {\n    await $helpers.httpRequest({\n      method: 'POST',\n      url: 'https://' + EVO_HOST + '/message/sendText/' + EVO_INSTANCE,\n      headers: { 'apikey': EVO_KEY, 'Content-Type': 'application/json' },\n      body: { number: to, text }\n    });\n  } catch(e) {}\n}\n\nasync function setGHLTag(ph, pause) {\n  try {\n    const sd = await $helpers.httpRequest({ method: 'GET', url: 'https://services.leadconnectorhq.com/contacts/?locationId=' + GHL_LOC + '&query=' + encodeURIComponent('+' + ph), headers: H });\n    const contacts = sd.contacts || [];\n    let contactId = contacts[0]?.id;\n    let currentTags = contacts[0]?.tags || [];\n    if (!contactId) {\n      await $helpers.httpRequest({ method: 'POST', url: 'https://services.leadconnectorhq.com/contacts/', headers: H, body: { locationId: GHL_LOC, phone: '+' + ph, tags: pause ? ['lucy-paused'] : [] } });\n    } else {\n      const newTags = pause ? [...new Set([...currentTags, 'lucy-paused'])] : currentTags.filter(t => t !== 'lucy-paused');\n      await $helpers.httpRequest({ method: 'PUT', url: 'https://services.leadconnectorhq.com/contacts/' + contactId, headers: H, body: { tags: newTags } });\n    }\n  } catch(e) {}\n}\n\n// --- Dayana envía comando desde su propio WhatsApp ---\nif (fromMe) {\n  const botEchoPhrases = ['▶️','⏸️','de vuelta','reanudado','pausado. andrea','entendido, no te escribir','aquí estoy para ayudarte','aqui estoy para ayudarte'];\n  if (botEchoPhrases.some(p => message.includes(p))) return [];\n  const isStop = stopWords.some(w => message.includes(w));\n  const isContinue = !isStop && continueWords.some(w => message.includes(w));\n  if (isStop || isContinue) {\n    const words = message.split(/\\s+/);\n    const digits = words.slice(1).join('').replace(/\\D/g, '');\n    const targetPhone = digits.length > 4 ? digits : phone; // sin numero → usar contacto actual\n    if (targetPhone) {\n      if (isStop) {\n        staticData.pausedContacts[targetPhone] = true;\n        await setGHLTag(targetPhone, true);\n        await sendWA(phone, '⏸️ Pausado. Andrea no responderá a +' + targetPhone + '.\\nEnvía: CONTINUAR ' + targetPhone + ' para reanudar.');\n      } else {\n        delete staticData.pausedContacts[targetPhone];\n        await setGHLTag(targetPhone, false);\n        if (!staticData.justContinued) staticData.justContinued = {};\n        staticData.justContinued[targetPhone] = Date.now();\n        await sendWA(phone, '▶️ Reanudado. Andrea retomará la conversación con +' + targetPhone + '.');\n      }\n    }\n    return [];\n  }\n  return $input.all();\n}\n\n// --- Mensaje de cliente ---\nconst isStop = stopWords.some(w => message.includes(w));\nconst isContinue = !isStop && continueWords.some(w => message.includes(w));\n\nif (isStop) {\n  staticData.pausedContacts[phone] = true;\n  await setGHLTag(phone, true);\n  await sendWA(phone, 'Entendido, no te escribiré más. Si en el futuro necesitas ayuda, escríbeme *CONTINUE*. ✅');\n  return [];\n}\n\nif (isContinue) {\n  delete staticData.pausedContacts[phone];\n  await setGHLTag(phone, false);\n  // Marcar para evitar que ¿Comando de Roy? re-pause el contacto al recibir el eco\n  if (!staticData.justContinued) staticData.justContinued = {};\n  staticData.justContinued[phone] = Date.now();\n  await sendWA(phone, '▶️ ¡De vuelta! Aquí estoy para ayudarte 😊 ¿En qué puedo asistirte?');\n  return [];\n}\n\n// Gracia de 5 min post-CONTINUE: no bloquear aunque GHL aún tenga el tag\nif (!staticData.justContinued) staticData.justContinued = {};\nif (Date.now() - (staticData.justContinued[phone] || 0) < 300000) {\n  delete staticData.pausedContacts[phone];\n  return $input.all();\n}\n\nlet isPaused = !!staticData.pausedContacts[phone];\nif (!isPaused) {\n  try {\n    const sd = await $helpers.httpRequest({ method: 'GET', url: 'https://services.leadconnectorhq.com/contacts/?locationId=' + GHL_LOC + '&query=' + encodeURIComponent('+' + phone), headers: H });\n    const contact = (sd.contacts || [])[0];\n    if (contact && Array.isArray(contact.tags) && contact.tags.includes('lucy-paused')) {\n      isPaused = true;\n      staticData.pausedContacts[phone] = true;\n    }\n  } catch(e) { isPaused = !!staticData.pausedContacts[phone]; }\n}\nif (isPaused) return [];\nreturn $input.all();"
+      },
       "id": "node-stop-handler",
       "name": "Filtro stop y pausa",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        750,
+        752,
         400
       ],
-      "continueOnFail": true,
-      "parameters": {
-        "jsCode": "const phone = $json.phone;\nconst fromMe = $json.fromMe === true;\nconst message = ($json.message || '').toLowerCase().trim();\nconst GHL_KEY = 'pit-b467b97c-de3a-4321-bb0f-e9f09c380faf';\nconst GHL_LOC = 'IYslAlpLthyYmzorDhnP';\nconst EVO_HOST = 'n8n-evolution-api.78s07r.easypanel.host';\nconst EVO_KEY = '429683C4C977415CAAFCCE10F7D57E11';\nconst EVO_INSTANCE = 'Dayana%20Munoz';\nconst staticData = $getWorkflowStaticData('global');\nif (!staticData.pausedContacts) staticData.pausedContacts = {};\n\n// ── Deteccion de bot por tiempo + keywords ──\nif (!staticData.lastSentAt) staticData.lastSentAt = {};\nconst lastSent = staticData.lastSentAt[phone] || 0;\nconst msSinceLastSend = Date.now() - lastSent;\nconst botKeywords = [\n  // Auto-reply clasicos\n  'gracias por contactar','gracias por comunicarte','gracias por escribir',\n  'fuera de oficina','mensaje automático','mensaje automatico',\n  'en breve te atender','nuestro equipo te atender','horario de atención',\n  'horario de atencion','este es un mensaje automático','este es un mensaje automatico',\n  'respuesta automática','respuesta automatica','auto-reply','automated message',\n  'outside business hours','outside of business hours','bot de atención',\n  'bot de atencion','currently unavailable','will get back to you',\n  'te responderemos a la brevedad','en horario de oficina',\n  // Bots que se presentan como asistentes\n  'soy la asistente de','soy tu asistente','asistente virtual de',\n  'la asistente de','soy el asistente de','soy el bot de',\n  'soy una asistente','soy un asistente','soy la ia de',\n  'quieres mas informacion','quieres más información',\n  'puedo ayudarte con información','te puedo dar información'\n];\nconst hasBotKeyword = botKeywords.some(kw => message.includes(kw));\nif (msSinceLastSend < 6000 && hasBotKeyword) {\n  return []; // Bot auto-reply detectado — ignorar sin pausar el contacto\n}\n\n\n\nconst stopWords = ['stop','no me escribas','no me molestes','unsubscribe','no me contactes','no mas mensajes','no más mensajes','borra mi numero','borrame','no quiero mensajes','no me llames'];\nconst continueWords = ['continuar','continue','reanudar'];\n\nconst H = { 'Authorization': 'Bearer ' + GHL_KEY, 'Version': '2021-07-28', 'Content-Type': 'application/json' };\n\nasync function sendWA(to, text) {\n  try {\n    await fetch('https://' + EVO_HOST + '/message/sendText/' + EVO_INSTANCE, {\n      method: 'POST',\n      headers: { 'apikey': EVO_KEY, 'Content-Type': 'application/json' },\n      body: JSON.stringify({ number: to, text })\n    });\n  } catch(e) {}\n}\n\nasync function setGHLTag(ph, pause) {\n  try {\n    const sr = await fetch('https://services.leadconnectorhq.com/contacts/?locationId=' + GHL_LOC + '&query=' + encodeURIComponent('+' + ph), { method: 'GET', headers: H });\n    const sd = await sr.json();\n    const contacts = sd.contacts || [];\n    let contactId = contacts[0]?.id;\n    let currentTags = contacts[0]?.tags || [];\n    if (!contactId) {\n      await fetch('https://services.leadconnectorhq.com/contacts/', {\n        method: 'POST', headers: H,\n        body: JSON.stringify({ locationId: GHL_LOC, phone: '+' + ph, tags: pause ? ['lucy-paused'] : [] })\n      });\n    } else {\n      const newTags = pause ? [...new Set([...currentTags, 'lucy-paused'])] : currentTags.filter(t => t !== 'lucy-paused');\n      await fetch('https://services.leadconnectorhq.com/contacts/' + contactId, { method: 'PUT', headers: H, body: JSON.stringify({ tags: newTags }) });\n    }\n  } catch(e) {}\n}\n\n// --- Dayana envía comando desde su propio WhatsApp ---\nif (fromMe) {\n  const botEchoPhrases = ['▶️','⏸️','de vuelta','reanudado','pausado. andrea','entendido, no te escribir','aquí estoy para ayudarte','aqui estoy para ayudarte'];\n  if (botEchoPhrases.some(p => message.includes(p))) return [];\n  const isStop = stopWords.some(w => message.includes(w));\n  const isContinue = !isStop && continueWords.some(w => message.includes(w));\n  if (isStop || isContinue) {\n    const words = message.split(/\\s+/);\n    const digits = words.slice(1).join('').replace(/\\D/g, '');\n    const targetPhone = digits.length > 4 ? digits : phone; // sin numero → usar contacto actual\n    if (targetPhone) {\n      if (isStop) {\n        staticData.pausedContacts[targetPhone] = true;\n        await setGHLTag(targetPhone, true);\n        await sendWA(phone, '⏸️ Pausado. Andrea no responderá a +' + targetPhone + '.\\nEnvía: CONTINUAR ' + targetPhone + ' para reanudar.');\n      } else {\n        delete staticData.pausedContacts[targetPhone];\n        await setGHLTag(targetPhone, false);\n        if (!staticData.justContinued) staticData.justContinued = {};\n        staticData.justContinued[targetPhone] = Date.now();\n        await sendWA(phone, '▶️ Reanudado. Andrea retomará la conversación con +' + targetPhone + '.');\n      }\n    }\n    return [];\n  }\n  return $input.all();\n}\n\n// --- Mensaje de cliente ---\nconst isStop = stopWords.some(w => message.includes(w));\nconst isContinue = !isStop && continueWords.some(w => message.includes(w));\n\nif (isStop) {\n  staticData.pausedContacts[phone] = true;\n  await setGHLTag(phone, true);\n  await sendWA(phone, 'Entendido, no te escribiré más. Si en el futuro necesitas ayuda, escríbeme *CONTINUE*. ✅');\n  return [];\n}\n\nif (isContinue) {\n  delete staticData.pausedContacts[phone];\n  await setGHLTag(phone, false);\n  // Marcar para evitar que ¿Comando de Roy? re-pause el contacto al recibir el eco\n  if (!staticData.justContinued) staticData.justContinued = {};\n  staticData.justContinued[phone] = Date.now();\n  await sendWA(phone, '▶️ ¡De vuelta! Aquí estoy para ayudarte 😊 ¿En qué puedo asistirte?');\n  return [];\n}\n\n// Gracia de 5 min post-CONTINUE: no bloquear aunque GHL aún tenga el tag\nif (!staticData.justContinued) staticData.justContinued = {};\nif (Date.now() - (staticData.justContinued[phone] || 0) < 300000) {\n  delete staticData.pausedContacts[phone];\n  return $input.all();\n}\n\nlet isPaused = !!staticData.pausedContacts[phone];\nif (!isPaused) {\n  try {\n    const sr = await fetch('https://services.leadconnectorhq.com/contacts/?locationId=' + GHL_LOC + '&query=' + encodeURIComponent('+' + phone), { method: 'GET', headers: H });\n    const sd = await sr.json();\n    const contact = (sd.contacts || [])[0];\n    if (contact && Array.isArray(contact.tags) && contact.tags.includes('lucy-paused')) {\n      isPaused = true;\n      staticData.pausedContacts[phone] = true;\n    }\n  } catch(e) { isPaused = !!staticData.pausedContacts[phone]; }\n}\nif (isPaused) return [];\nreturn $input.all();"
-      }
+      "continueOnFail": true
     }
   ],
   "connections": {
@@ -2575,1037 +2532,10 @@
   "settings": {
     "executionOrder": "v1",
     "callerPolicy": "workflowsFromSameOwner",
-    "availableInMCP": false
+    "availableInMCP": false,
+    "binaryMode": "separate"
   },
-  "staticData": {
-    "global": {
-      "14077329277": [
-        {
-          "role": "user",
-          "content": "Puedo hablar con Roy?"
-        },
-        {
-          "role": "assistant",
-          "content": "Con gusto te comunico con Roy 😊 ¿Es algo urgente o puedo agendarte una cita? ¿Sobre qué necesitas hablar con él?"
-        },
-        {
-          "role": "user",
-          "content": "Urgente"
-        },
-        {
-          "role": "assistant",
-          "content": "Perfecto, le aviso a Roy ahora mismo 📞 Un momento."
-        },
-        {
-          "role": "user",
-          "content": "Llama a Roy"
-        },
-        {
-          "role": "assistant",
-          "content": "Perfecto, le aviso a Roy ahora mismo 📞 Un momento."
-        },
-        {
-          "role": "user",
-          "content": "Llama a Roy"
-        },
-        {
-          "role": "assistant",
-          "content": "Perfecto, le aviso a Roy ahora mismo 📞 Un momento."
-        },
-        {
-          "role": "user",
-          "content": "Hola"
-        },
-        {
-          "role": "assistant",
-          "content": "¡Hola, María! Soy Lucy. ¿Qué te trae por aquí hoy? ¿Es algo urgente o estás explorando opciones?"
-        },
-        {
-          "role": "user",
-          "content": "Dental"
-        },
-        {
-          "role": "assistant",
-          "content": "Claro, María. ¿Te gustaría saber más sobre nuestro plan dental? Ofrecemos el Select Dental PPO, que incluye copagos desde el primer día y sin deducible. ¿Es para ti sola o para toda la familia?"
-        },
-        {
-          "role": "user",
-          "content": "Llama a Roy"
-        },
-        {
-          "role": "assistant",
-          "content": "Perfecto, le aviso a Roy ahora mismo 📞 Un momento."
-        },
-        {
-          "role": "user",
-          "content": "Quiero una cita"
-        },
-        {
-          "role": "assistant",
-          "content": "Claro, María. ¿Qué día y hora te gustaría agendar la cita?"
-        },
-        {
-          "role": "user",
-          "content": "Lunes 10 am"
-        },
-        {
-          "role": "assistant",
-          "content": "Perfecto, María. Te agendo una cita para el lunes a las 10 am. ¿Podrías darme tu correo electrónico para enviarte la confirmación?"
-        },
-        {
-          "role": "user",
-          "content": "mariaesthermarin@gmail.com"
-        },
-        {
-          "role": "assistant",
-          "content": "Gracias, María. Te he agendado para el lunes a las 10 am y te enviaré la confirmación a tu correo. ¡Nos hablamos pronto! 😊"
-        },
-        {
-          "role": "user",
-          "content": "Me enviaste el email"
-        },
-        {
-          "role": "assistant",
-          "content": "No tengo la capacidad de enviar correos electrónicos directamente. Sin embargo, he agendado tu cita para el lunes a las 10 am y te confirmé aquí. Si necesitas más información, ¡dímelo! 😊"
-        },
-        {
-          "role": "user",
-          "content": "No me escribas más"
-        },
-        {
-          "role": "assistant",
-          "content": "Entendido, María. Si cambias de opinión o necesitas ayuda, aquí estaré. ¡Que tengas un buen día! 😊"
-        },
-        {
-          "role": "user",
-          "content": "Llama a Roy"
-        },
-        {
-          "role": "assistant",
-          "content": "Con gusto te comunico con Roy 😊 ¿Es algo urgente o puedo agendarte una cita? ¿Sobre qué necesitas hablar con él?"
-        },
-        {
-          "role": "user",
-          "content": "Urgente soy su esposa"
-        },
-        {
-          "role": "assistant",
-          "content": "Perfecto, le aviso a Roy ahora mismo 📞 Un momento."
-        },
-        {
-          "role": "user",
-          "content": "https://www.tiktok.com/t/ZP8gsC1ty"
-        },
-        {
-          "role": "assistant",
-          "content": "Parece que me enviaste un enlace de TikTok. ¿Cómo puedo ayudarte con eso?"
-        }
-      ],
-      "processedIds": {
-        "2AACB2C8AD766AC2825F": 1777118905334,
-        "2AC1E318234215B6D603": 1777119052334,
-        "2A90D5AC0A90D71AA660": 1777119060492,
-        "2ACAD6F9B78211912B6F": 1777119126441,
-        "2AAFB10B73AEFA2A1709": 1777119139293,
-        "2A563196A8E25BCFBB37": 1777119153947,
-        "2AF12191518522E83862": 1777119172851,
-        "2AEB99863BF86FA99296": 1777119315400,
-        "2AAF6BEF27ED63F58953": 1777119423878,
-        "2A76A6C11025A49E0144": 1777119454156,
-        "2AB01FFC0DC42CBA0135": 1777119467664,
-        "2A8BF8F16AC100B9C8CD": 1777119509386,
-        "2AB066B3F354A37FEDA1": 1777119544627,
-        "2A30CE3FD91E583E106F": 1777119576050,
-        "2AA7DA902A7612B9F92B": 1777119586679,
-        "2ABECEBC051D0FFB5527": 1777120218738,
-        "2AC5C33C750722BBD84C": 1777120274628,
-        "2A675F4E36FC52688F4B": 1777120307265,
-        "2A4E1559B4A55AE6A871": 1777120331732,
-        "2AEA4D340E8FE59C8589": 1777120372412,
-        "2A7675CCCE71D25AD6AE": 1777120380371,
-        "2A7E4EB880ADE5454515": 1777120391350,
-        "2A52CBF7A037D752F40B": 1777120424892,
-        "2AB0BFA6EF3CE5B4F636": 1777120598865,
-        "2A8E9B5A6CAB2D1CBA77": 1777120609963,
-        "2A775CF8F2BB6698E716": 1777121269640,
-        "2AB42A8BC7B566C1F8B9": 1777121288789,
-        "2A8569800B1F61F39054": 1777121294920,
-        "2A1AC6513FBD83E8E1E6": 1777121308121,
-        "2AA458092712DFF0F9D9": 1777121317857,
-        "2A2D581A1087A7EA9CB8": 1777121582576,
-        "2AD4DEBE0242E44CFC31": 1777121591481,
-        "2A2750E98946683B8E6C": 1777121611040,
-        "2A45F92D3C7972484664": 1777121619142,
-        "2A077AE6F5F95C419433": 1777124819847,
-        "3BCDF0969242BD58D9AC": 1777124876512,
-        "3B08FFC7C2F57F9B9293": 1777124882386,
-        "ACFB1297E94F9A0A9DDADA2DB5F68B2F": 1777124918112,
-        "3BA3E6ACA4C7B48863F8": 1777124945661,
-        "3B4D798801F9D0BD0F0E": 1777124970954,
-        "3EB08B2C235B005DFB5EEC": 1777124980300,
-        "3B57AD51E9F52693372B": 1777124994781,
-        "3B81E3D272F7BCAFCD92": 1777125006095,
-        "3EB089AF288D3EFAF8AA02": 1777125016726,
-        "3EB0E28682230EE3621C26": 1777125047914,
-        "3EB069C3AE8017C560C5A6": 1777125066395,
-        "3EB0DD93C9059986F370B2": 1777125168648,
-        "3EB0C9AD6B8B2DEB0388FB": 1777125175592,
-        "3EB083ACF9DAA08D701828": 1777125206858,
-        "3EB0D4FC22B23E5DE3B77C": 1777125217062,
-        "3EB0FC59A949BABD5D3FE1": 1777125251227,
-        "3EB0ADCC2B8091FC9977CC": 1777126632220,
-        "3EB0968FDBBCC6F46B8EE1": 1777126638291,
-        "3EB0604E37BA8135CA0F60": 1777126646909,
-        "2A0A1775BE83EF6425C1": 1777126751004,
-        "2ACD461C63F062480BBE": 1777127106829,
-        "2A177B9DBEBD288EDCB2": 1777127139775,
-        "2A2E262D54F8CFF50F67": 1777127383864,
-        "2AF22D83650B4027AF32": 1777127423210,
-        "2A1614B9F33FC92D69B1": 1777127488360,
-        "2AA33E96DF6812BC420D": 1777127940639,
-        "2AF10432D4F3105F5A74": 1777127953227,
-        "2A458C5B616AB7924360": 1777128146736,
-        "2A7CA9612E345C19A399": 1777128153404,
-        "2A8D614F49FC997E7A68": 1777128299633,
-        "2A842017B9C5A9769D68": 1777128810994,
-        "AC21C76DA23DD0AF6E9273A54E07DE38": 1777130475620,
-        "AC916980D27AD3BA9C0CB2775BD0A6CE": 1777131008828,
-        "2A77840261AE2BCAF584": 1777137043386,
-        "2AD6CFF6D5FF4BB01CAE": 1777137050953,
-        "2ADE9A572B53D0AE853F": 1777137446267,
-        "2ABC0D751DB6B837C5D7": 1777137461055,
-        "AC9AC88B3D471986803A906CEEDF9F47": 1777139030513,
-        "ACA3F20F062BC5D853B1177C5A27C61E": 1777140607815,
-        "AC2565ADF6B5BAA577082E974BE63D2C": 1777140617171,
-        "2AD107EF9CB20D5D304C": 1777141231177,
-        "2A0A190A5D236033959B": 1777141245484,
-        "2A1CC236E29ADE672152": 1777141269774,
-        "2A55E721FAFCEE80AC14": 1777141284972,
-        "2A46A8DC27462DD4528E": 1777141291529,
-        "2ADB560BB1CC38602BA0": 1777141411865,
-        "2AF74FD249F7107430FF": 1777141436167,
-        "2A4415521D7D79A115FC": 1777141442112,
-        "2A8168F10F85B082D212": 1777141458995,
-        "2AC96D2A5A99DFFEE998": 1777141472045,
-        "AC54EFD2520E572FDEE86A252A2FF92B": 1777141565025,
-        "AC4985F780AD86D9FACAD94E989CFAE9": 1777141572138,
-        "AC5DEE0E5B232C07E15973EE6D8C74EE": 1777141794310,
-        "AC017D339B02A084ED5390D84A5D5ECA": 1777141800671,
-        "3EB095F14DDDF2991D741A": 1777143431006,
-        "3EB091C39FAE39F8637B15": 1777143482310,
-        "2AD6A1FBE17A50824A59": 1777144509694,
-        "3AD2AB05E5E01A5D2C6E": 1777145811846,
-        "3A9A2A57A1B981E1B45E": 1777145843526,
-        "3A884F35D87B42ECF1A4": 1777145862577,
-        "3AB535A542810A2FF6B6": 1777145874334,
-        "3A365CF7AD2902156DCB": 1777145890737,
-        "3AD66A183676FB952798": 1777145900576,
-        "3AFDF53D800EDDC12B7B": 1777145918229,
-        "ACD48776CFF92C18B3142147653A70BB": 1777145924726,
-        "3AB02BBEDCE5B8DA5E91": 1777145927736,
-        "3AC5EF3F5D887C502DCD": 1777145938732,
-        "AC9BE3FD53BABD2BE42AAD66D01695ED": 1777145953560,
-        "3AEC703D58CED59ACACC": 1777145969715,
-        "3AFAAA140A88EEB1FEDD": 1777145990349,
-        "2ADD140D2BE9B42CED17": 1777146113342,
-        "2A5815FC1A37DCCE79C0": 1777146126844,
-        "2AD99B9BBCEDF08EDA1B": 1777146299354,
-        "AC1ECCAF30078683B7FD2D754035A11E": 1777149022591,
-        "ACD83B34EF35AA0D41D2C21D0EFB1323": 1777149580170,
-        "ACE4B8EDD2B992D016F5B798207B7AB5": 1777149596199,
-        "2A8A60A88B7FC2E357A8": 1777149659790,
-        "4A62E8E00BF1FB3ED797": 1777169737957,
-        "3A694890DB92E09A6B57": 1777170252018,
-        "3A161A7D83AF71760A73": 1777170291291,
-        "3A62D02DC39968FD6748": 1777170306563,
-        "3A793C1C0871BB5FDA47": 1777170510996,
-        "3A730948770C4F4471B4": 1777170525986,
-        "3AF7969E432C65EE66C6": 1777170537833,
-        "3AE300A00728F30AEC52": 1777170580312,
-        "3AA4F16907683012E17E": 1777170596686,
-        "3A6B0C9FE7D2B2E7516F": 1777170604216,
-        "3AA160758B2C55C7E4C9": 1777170638910,
-        "3A9C8AF4C6B96A1A39A8": 1777170674108,
-        "3A0767C520F1795C7938": 1777170685371,
-        "3A8F03E7A1EE5B87F714": 1777170709635,
-        "3AEFADC53E8019B74A51": 1777170727010,
-        "3A37CDE403D508DE1974": 1777170788797,
-        "3ADF97D650BDB9387F09": 1777171133594,
-        "3A05E7550B3DE09A7B12": 1777171198303,
-        "3A8A33E332B38F08F6A6": 1777171216544,
-        "3AF22DA04EC2FBEF1EAC": 1777171228119,
-        "3A9E5D28284DBC10B7DF": 1777171281351,
-        "3AB4EC3B09958A104B00": 1777171372892,
-        "3ADF876C8D6CF084DF40": 1777172159488,
-        "3A0F26751EF82FDE8E59": 1777172185944,
-        "ACD013C96D993A0EEC018E0EBC2189F5": 1777208413995,
-        "3A85B0EA9D7DD5730E8B": 1777209003524,
-        "2AD24557F9EAA1D75EF6": 1777212060984,
-        "2A3D9169F688A3F87BD4": 1777212221820,
-        "2A6AD0A55635C36F7AF1": 1777212243903,
-        "2A6522AC0F19C02CAE38": 1777213247087,
-        "2A9E71E970A0232F3B22": 1777213680513,
-        "3EB07ECB1E29550A308AA0": 1777216245056,
-        "3A418FBAF5CB773C49EF": 1777219059527,
-        "3A06D97A63CDD23E2FAF": 1777219084246,
-        "3AB3BEA172D4822362EF": 1777219111947,
-        "3ABF8FBDC208FF4AC52A": 1777219120282,
-        "3AAC69F55607EE4097E3": 1777219145193,
-        "3AD9B86EEEB81B81899B": 1777219223078,
-        "3A4175BEA34040A947DC": 1777219238649,
-        "3A1FA93B5BE41F15985B": 1777222001308,
-        "3B4CC640F8C403B7FBD0": 1777223310714,
-        "3B7A3F841D38D2AD5E06": 1777223576293,
-        "3A6A582E131DD135CE33": 1777224118083,
-        "3A659D87930FFA7584E3": 1777224130692,
-        "3A3C99EAD2B5D4E3F120": 1777224145833,
-        "3AA2F0D4F501FCEC2D5D": 1777224155551,
-        "3AD4E0391722AD051365": 1777224164098,
-        "AC00E3DD8B25AB4108E03EA7F0106469": 1777224403887,
-        "AC15F34618E8892AD2DBA194D2C98E19": 1777224430694,
-        "3BB7C48C3DA9D0010F84": 1777224651289,
-        "2A01E1422043423884DD": 1777224693980,
-        "2AAD06952873B3F937C0": 1777224715880,
-        "2A63D35A6390357EC51C": 1777224731529,
-        "2AE375D3779F14D1F38E": 1777224759894,
-        "3BE07DBADAABB2227A1D": 1777225552453,
-        "3A792AE4F876F01D68B6": 1777225818142,
-        "3A9F4A5184D2451F6E34": 1777226433580,
-        "3AE99ECC6A5E51255A7C": 1777226457291,
-        "3A358C2699200C87AADD": 1777226476082,
-        "3AA2307012BC4883075A": 1777226517986
-      },
-      "pausedContacts": {},
-      "16155467023": [
-        {
-          "role": "user",
-          "content": "https://link.apisystem.tech/widget/survey/lZgSMe05RGnWw9frkb2q"
-        },
-        {
-          "role": "assistant",
-          "content": "Dayana, veo que compartiste otro enlace. ¿Te gustaría que te ayude con algo relacionado con esa encuesta? Estoy aquí para asistirte. 😊"
-        },
-        {
-          "role": "user",
-          "content": "ese es el de aca"
-        },
-        {
-          "role": "assistant",
-          "content": "¿Te refieres a que es para la cotización de seguros de salud de Obama Care, Dayana? 😊 Puedo ayudarte a revisar tus opciones. ¿Tienes alguna situación específica que te gustaría discutir?"
-        },
-        {
-          "role": "user",
-          "content": "https://link.apisystem.tech/widget/survey/CDzrwPXR9GHh1Utj5HQd"
-        },
-        {
-          "role": "assistant",
-          "content": "Dayana, parece que compartiste otro enlace. ¿Cómo puedo ayudarte con eso? ¿Tienes alguna pregunta específica o necesitas asistencia sobre seguros? Estoy aquí para ayudarte. 😊"
-        },
-        {
-          "role": "user",
-          "content": "ese esel de glob life"
-        },
-        {
-          "role": "assistant",
-          "content": "Entiendo, Dayana. 😊 Si estás buscando información sobre el seguro de vida de Globe Life, puedo ayudarte. ¿Te gustaría saber más sobre sus beneficios o cómo funciona?"
-        },
-        {
-          "role": "user",
-          "content": "dejame y le hago la botonera rapido"
-        },
-        {
-          "role": "assistant",
-          "content": "Claro, Dayana. Tómate tu tiempo, aquí estaré cuando estés lista. 😊 Si necesitas ayuda con algo más, no dudes en decírmelo."
-        },
-        {
-          "role": "user",
-          "content": "ya le arreglo el qr"
-        },
-        {
-          "role": "assistant",
-          "content": "Perfecto, Dayana. 😊 Si tienes preguntas o necesitas ayuda con el QR o algo relacionado con los seguros, ¡aquí estoy para ayudarte! ¿Qué más puedo hacer por ti?"
-        },
-        {
-          "role": "user",
-          "content": "https://app.crminteligent.com/v2/preview/g05ulRJ7IgXaUtF1mhrI?notrack=true"
-        },
-        {
-          "role": "assistant",
-          "content": "Dayana, veo que compartiste otro enlace. ¿Cómo puedo ayudarte con eso? ¿Tienes alguna pregunta específica o algo en lo que necesites asistencia? Estoy aquí para ayudarte. 😊"
-        },
-        {
-          "role": "user",
-          "content": "pero ese es"
-        },
-        {
-          "role": "assistant",
-          "content": "Entiendo, Dayana. 😊 ¿Te refieres a que el enlace que compartiste es el correcto para el seguro que buscas? Si necesitas ayuda con la información o la cotización, házmelo saber. Estoy aquí para asistirte."
-        },
-        {
-          "role": "user",
-          "content": "Cuál es el número de tlf de la asistente de ella para hacer el qr"
-        },
-        {
-          "role": "assistant",
-          "content": "Lo siento, Dayana, pero no puedo compartir información de contacto personal. Si necesitas ayuda con algo más o tienes alguna pregunta, estaré encantada de asistirte. 😊"
-        },
-        {
-          "role": "user",
-          "content": "Ok ya lo cambio"
-        },
-        {
-          "role": "assistant",
-          "content": "¡Genial, Dayana! 😊 Si necesitas ayuda con algo más o si hay algo específico en lo que te pueda asistir, no dudes en decírmelo. Estoy aquí para ayudarte."
-        },
-        {
-          "role": "user",
-          "content": "Holis"
-        },
-        {
-          "role": "assistant",
-          "content": "¡Hola, Dayana! 😊 ¿Cómo estás? ¿En qué puedo ayudarte hoy?"
-        },
-        {
-          "role": "user",
-          "content": "Estoy pendiente cualquier cosa"
-        },
-        {
-          "role": "assistant",
-          "content": "Perfecto, Dayana. 😊 Estoy aquí para lo que necesites. Si tienes alguna pregunta o algo en mente, no dudes en decírmelo. ¡Estoy lista para ayudarte!"
-        },
-        {
-          "role": "user",
-          "content": "Upsiii jaja"
-        },
-        {
-          "role": "assistant",
-          "content": "¡No te preocupes, Dayana! 😊 A veces pasa. Si necesitas ayuda con algo o tienes alguna pregunta, ¡aquí estoy para ti! ¿En qué puedo asistirte hoy?"
-        },
-        {
-          "role": "user",
-          "content": "Cuál es tu nombre ?"
-        },
-        {
-          "role": "assistant",
-          "content": "Soy Lucy, tu asistente en Roma Insurance Group. 😊 ¿En qué puedo ayudarte hoy, Dayana?"
-        },
-        {
-          "role": "user",
-          "content": "Pero me dijiste que eras la asistente de Osiris Zambrano"
-        },
-        {
-          "role": "assistant",
-          "content": "Oh, lo siento por la confusión, Dayana. Soy Lucy, asistente de Roy Mota en Roma Insurance Group. Estoy aquí para ayudarte con cualquier pregunta que tengas sobre seguros. ¿En qué puedo asistirte hoy? 😊"
-        }
-      ],
-      "19545128581": [
-        {
-          "role": "user",
-          "content": "Hermano, Feliz domingo como estas"
-        },
-        {
-          "role": "assistant",
-          "content": "¡Hola Juan Carlos! Soy Lucy. 😊 Estoy aquí para ayudarte. ¿Cómo estás hoy? ¿Es algo urgente o estás explorando opciones?"
-        },
-        {
-          "role": "user",
-          "content": "Como sigues de la rodilla?"
-        },
-        {
-          "role": "assistant",
-          "content": "Gracias por preguntar, Juan Carlos. No tengo rodilla, pero estoy aquí para ayudarte con cualquier duda que tengas sobre seguros. ¿Qué te trae por aquí hoy?"
-        },
-        {
-          "role": "user",
-          "content": "Viejo para informarte que extendieron la calificacion para la proxima academia, la cual es hasta el proximo domingo 3 de mayo"
-        },
-        {
-          "role": "assistant",
-          "content": "¡Gracias por la información, Juan Carlos! 😊 Aunque no estoy directamente relacionada con la academia, me alegra saberlo. Si necesitas ayuda con algún tema de seguros o tienes preguntas, aquí estoy para ayudarte. ¿Hay algo específico en lo que te gustaría que te apoye?"
-        },
-        {
-          "role": "user",
-          "content": "Llevas hasta la fecha 19.000 puntos"
-        },
-        {
-          "role": "assistant",
-          "content": "¡Eso suena genial, Juan Carlos! 😊 ¿Cómo te sientes respecto a esos puntos? Si necesitas ayuda con algo más o tienes preguntas sobre seguros, ¡estoy aquí para ayudarte!"
-        },
-        {
-          "role": "user",
-          "content": "te faltan 12.ooo"
-        },
-        {
-          "role": "assistant",
-          "content": "¡Vaya, Juan Carlos! Cada punto cuenta. 😊 Si necesitas apoyo con algo relacionado con seguros o cualquier otra consulta, ¡aquí estoy para ayudarte! ¿Hay algo específico en lo que te gustaría que te apoye?"
-        },
-        {
-          "role": "user",
-          "content": "Hola 👋 \nQue bueno que estés asistiendo a Osi"
-        },
-        {
-          "role": "assistant",
-          "content": "¡Hola Juan Carlos! 😊 Gracias por tus palabras. Estoy aquí para ayudarte con cualquier pregunta que tengas sobre seguros. ¿Te gustaría saber algo en particular o necesitas asistencia con algún tema?"
-        },
-        {
-          "role": "user",
-          "content": "Estoy buscando seguros de salud y seguros como protectores de ingresos"
-        },
-        {
-          "role": "assistant",
-          "content": "Perfecto, Juan Carlos. 😊 Para entender mejor tus necesidades, ¿tienes seguro actualmente o estás buscando opciones nuevas? Además, ¿es solo para ti o también incluye a tu familia?"
-        },
-        {
-          "role": "user",
-          "content": "No tengo seguro, estoy buscando opciones nuevas"
-        },
-        {
-          "role": "assistant",
-          "content": "Entiendo, Juan Carlos. Eso crea una urgencia para encontrar la mejor opción. 😊 Con Obama Care, podrías calificar para subsidios que lo hagan GRATIS o muy barato. ¿Te gustaría saber más sobre cómo funciona el proceso de inscripción?"
-        },
-        {
-          "role": "user",
-          "content": "Si, y tambien sobre coberturas de accintes"
-        },
-        {
-          "role": "assistant",
-          "content": "Claro, Juan Carlos. 😊 Obama Care te puede ofrecer una cobertura médica básica, y además, los seguros de accidentes pueden complementar eso. Los planes de Accident Choice te cubren en caso de accidentes, incluyendo hospitalización y beneficios diarios. ¿Te gustaría que te envíe más información específica sobre eso?"
-        },
-        {
-          "role": "user",
-          "content": "Si, por favor"
-        },
-        {
-          "role": "assistant",
-          "content": "Voy a enviarte información sobre los planes de Accident Choice. Este tipo de seguro te ofrece beneficios por hospitalización y hasta $1,000 diarios por accidente. Es una excelente opción para complementar tu cobertura. ¿Te gustaría saber sobre algún otro tipo de seguro o información adicional?"
-        },
-        {
-          "role": "user",
-          "content": "Si. Envíame por favor"
-        },
-        {
-          "role": "assistant",
-          "content": "Aquí tienes la información sobre el plan de Accident Choice:\n\n- **Beneficios por Hospitalización:** Hasta $1,000 diarios.\n- **Internación por Accidente:** Hasta $4,000.\n- **Cobra hasta $400 diarios** mientras estés hospitalizado.\n- **Beneficios por lesiones accidentales** y más.\n\nEste seguro ayuda a cubrir costos que tu plan médico podría no incluir. Si tienes más preguntas o necesitas ayuda con otro tipo de seguro, ¡aquí estoy para ayudarte! 😊"
-        },
-        {
-          "role": "user",
-          "content": "Está excelente"
-        },
-        {
-          "role": "assistant",
-          "content": "¡Me alegra que te guste, Juan Carlos! 😊 Si tienes más preguntas sobre seguros de salud, ingresos o cualquier otra cosa, no dudes en decírmelo. Estoy aquí para ayudarte. ¿Hay algo más en lo que te gustaría profundizar?"
-        },
-        {
-          "role": "user",
-          "content": "Y por Cáncer existe alguna cobertura parecida ?"
-        },
-        {
-          "role": "assistant",
-          "content": "Sí, Juan Carlos. 😊 Tenemos un plan específico para el cáncer que puede ofrecerte una excelente protección. La póliza de cáncer cubre hasta $75,000 en caso de diagnóstico de cáncer y proporciona beneficios adicionales para tratamientos. ¿Te gustaría que te envíe más información sobre esta póliza?"
-        },
-        {
-          "role": "user",
-          "content": "Si"
-        },
-        {
-          "role": "assistant",
-          "content": "Aquí tienes la información sobre la póliza de cáncer:\n\n- **Cobertura hasta $75,000** en caso de diagnóstico de cáncer.\n- **Beneficios por tratamientos**, como quimioterapia y radioterapia.\n- **Pagos en efectivo** para ayudarte con los gastos durante el tratamiento.\n\nEs una opción muy valiosa para protegerte a ti y a tu familia. Si tienes alguna pregunta específica o necesitas más detalles, ¡aquí estoy para ayudarte! 😊"
-        },
-        {
-          "role": "user",
-          "content": "Excelente, tienes alguna brochure para leer"
-        },
-        {
-          "role": "assistant",
-          "content": "¡Claro, Juan Carlos! Te enviaré la información detallada sobre la póliza de cáncer. Aquí tienes el brochure:\n\n[brochure_cancer]\n\nSi tienes más preguntas después de revisarlo, no dudes en decírmelo. Estoy aquí para ayudarte. 😊"
-        }
-      ],
-      "584242987181": [
-        {
-          "role": "user",
-          "content": "Buenos dias hermano me traje la laptop por si tengo que hacer alguna prueba de llamar."
-        },
-        {
-          "role": "assistant",
-          "content": "¡Buenos días, Keny! 😊 Estoy aquí para ayudarte. ¿Es algo urgente lo que necesitas o estás explorando opciones?"
-        },
-        {
-          "role": "user",
-          "content": "Voy"
-        },
-        {
-          "role": "assistant",
-          "content": "¡Perfecto, Keny! ¿Qué situación te trae hoy aquí?"
-        },
-        {
-          "role": "user",
-          "content": "Dale si va"
-        },
-        {
-          "role": "assistant",
-          "content": "Entiendo que estás listo, Keny. ¿Tienes seguro actualmente?"
-        },
-        {
-          "role": "user",
-          "content": "Todo fino"
-        },
-        {
-          "role": "assistant",
-          "content": "¡Me alegra saberlo, Keny! 😊 ¿Para ti solo o incluye a tu familia en la cobertura?"
-        },
-        {
-          "role": "user",
-          "content": "Ya llame varias operadoras"
-        },
-        {
-          "role": "assistant",
-          "content": "Entiendo, Keny. ¿Qué te preocupa más: costo, cobertura o rapidez en obtener un seguro? Estoy aquí para ayudarte a encontrar la mejor opción."
-        },
-        {
-          "role": "user",
-          "content": "Si va hermano"
-        },
-        {
-          "role": "assistant",
-          "content": "¡Genial, Keny! 😊 Para poder ayudarte mejor, ¿qué es lo que más te preocupa en este momento sobre tu seguro?"
-        },
-        {
-          "role": "user",
-          "content": "Hermano resumen de las llamadas\nPara cuando llegues en la noche:\n\n1) Al marcar un numero en 4 oportunidades cayó a otra persona que no es la que estoy llamando esto paso con distintas personas que llame.\n\n2) llega un momento que sale una operadora en inglés y por lo menos llame a mi pareja cayó una vez pero luego no salía la llamada por nada del mundo.\n\n3) logre hablar con 6 personas pero en otros casos las llamadas no salen y nisiquiera repican.\n\nCreo que hay que ver eso porque las llamadas aveces salen otras no y eso haria recorrer una data prácticamente al azar y el tema de que agarre otros números.\n\nCosas positivas: se escucha bien y no se cae la llamada, en algunos casos se medio escucho entrecortado pero es algo normal en Venezuela pasa hasta desde los propios movil.\n\nHablamos cuando llegues entonces"
-        },
-        {
-          "role": "assistant",
-          "content": "¡Gracias por el resumen, Keny! 😊 Entiendo que has tenido algunos inconvenientes con las llamadas y aprecio que lo compartas. Es importante que todo funcione bien. \n\nMe alegra saber que la calidad de sonido ha sido buena en general. Hablamos más a fondo cuando llegues. ¡Cuídate!"
-        },
-        {
-          "role": "user",
-          "content": "Salen dos ceros antes del numero si se pueden quitar genial"
-        },
-        {
-          "role": "assistant",
-          "content": "Entiendo, Keny. ¿Te refieres a un número específico que se muestra incorrectamente? Si es así, puedo ayudarte con eso. ¿Puedes darme más detalles sobre dónde estás viendo esos ceros?"
-        }
-      ],
-      "14077912171": [
-        {
-          "role": "user",
-          "content": "Buenos días ya me conecto"
-        },
-        {
-          "role": "assistant",
-          "content": "¡Buenos días, Osi! Soy Lucy, aquí para ayudarte. ¿Es algo urgente o estás explorando opciones? 😊"
-        },
-        {
-          "role": "user",
-          "content": "Me vuelvo a conectar"
-        },
-        {
-          "role": "assistant",
-          "content": "¡Perfecto, Osi! Estoy aquí para ayudarte. ¿Qué situación te trae hoy aquí? 😊"
-        },
-        {
-          "role": "user",
-          "content": "Tranquilo me avisa"
-        },
-        {
-          "role": "assistant",
-          "content": "Claro, Osi. Estoy aquí cuando estés listo. ¿Hay algo específico en lo que te gustaría que te ayude más tarde? 😊"
-        },
-        {
-          "role": "user",
-          "content": "Roy ya estoy disponible"
-        },
-        {
-          "role": "assistant",
-          "content": "¡Genial, Osi! Con gusto te comunico con Roy 😊 ¿Es algo urgente o puedo agendarte una cita? ¿Sobre qué necesitas hablar con él?"
-        },
-        {
-          "role": "user",
-          "content": "Si e si tú puedes"
-        },
-        {
-          "role": "assistant",
-          "content": "Perfecto, Osi. Le aviso a Roy ahora mismo 📞 Un momento."
-        },
-        {
-          "role": "user",
-          "content": "Si 👍  Roy \nEstá bien"
-        },
-        {
-          "role": "assistant",
-          "content": "¡Perfecto, Osi! Roy te llama en un momento."
-        },
-        {
-          "role": "user",
-          "content": "Perfect"
-        },
-        {
-          "role": "assistant",
-          "content": "¡Me alegra que estés satisfecho, Osi! Si necesitas algo más, no dudes en decirme. Estoy aquí para ayudarte. 😊"
-        }
-      ],
-      "584148531712": [
-        {
-          "role": "user",
-          "content": "misión cumplida papaito"
-        },
-        {
-          "role": "assistant",
-          "content": "¡Hola, Roy Mota! 😊 ¿Cómo estás? ¿Es algo urgente o solo estás explorando opciones? Estoy aquí para ayudarte."
-        },
-        {
-          "role": "user",
-          "content": "no es urgente"
-        },
-        {
-          "role": "assistant",
-          "content": "¡Perfecto, Roy! Cuéntame, ¿qué situación te trae hoy aquí? Estoy lista para ayudarte con lo que necesites."
-        },
-        {
-          "role": "user",
-          "content": "[imagen/documento]"
-        },
-        {
-          "role": "assistant",
-          "content": "Gracias 😊 ¿Cómo puedo ayudarte hoy?"
-        }
-      ],
-      "19342469366": [
-        {
-          "role": "user",
-          "content": "Hey! It’s been a while since we last talked. Have you been staying busy lately? Just wanted to say hi and see if you still remember me! haha"
-        },
-        {
-          "role": "assistant",
-          "content": "¡Hola, Maria Fred! 😊 Claro que sí, me acuerdo de ti. Gracias por saludarme. ¿Cómo has estado? ¿Hay algo en lo que pueda ayudarte hoy?"
-        },
-        {
-          "role": "user",
-          "content": "Hey! It’s been a while since we last talked. Have you been staying busy lately? Just wanted to say hi and see if you still remember me! haha"
-        },
-        {
-          "role": "assistant",
-          "content": "¡Hola, Maria Fred! 😊 Claro que sí, me acuerdo de ti. Gracias por saludarme. ¿Cómo has estado? ¿Hay algo en lo que pueda ayudarte hoy?"
-        },
-        {
-          "role": "user",
-          "content": "Hola, Feliz domingo, ¿Fuiste hoy a la iglesia?"
-        },
-        {
-          "role": "assistant",
-          "content": "¡Hola, Maria Fred! 😊 Feliz domingo. No tengo la oportunidad de ir a la iglesia, pero espero que tú hayas tenido un buen día. ¿Hay algo en lo que pueda ayudarte hoy?"
-        }
-      ],
-      "13213459389": [
-        {
-          "role": "user",
-          "content": "Hola"
-        },
-        {
-          "role": "assistant",
-          "content": "¡Hola, Adrian! Soy Lucy, la asistente de Roy Mota. ¿Qué te trae por aquí hoy? ¿Es algo urgente o estás explorando opciones?"
-        },
-        {
-          "role": "user",
-          "content": "Damenina cita"
-        },
-        {
-          "role": "assistant",
-          "content": "Claro, Adrian. ¿Para qué día y hora te gustaría agendar la cita con Roy?"
-        },
-        {
-          "role": "user",
-          "content": "Lunea 10am"
-        },
-        {
-          "role": "assistant",
-          "content": "Perfecto, Adrian. He agendado tu cita con Roy para el lunes a las 10 am. ¿Te gustaría que te envíe un recordatorio por aquí?"
-        },
-        {
-          "role": "user",
-          "content": "Si"
-        },
-        {
-          "role": "assistant",
-          "content": "¡Genial, Adrian! Te enviaré un recordatorio el lunes por la mañana. Si necesitas algo más, no dudes en decírmelo. ¡Nos vemos el lunes! 😊"
-        },
-        {
-          "role": "user",
-          "content": "Piedes comunivarme con roy. Es mi papa"
-        },
-        {
-          "role": "assistant",
-          "content": "Con gusto, Adrian. ¿Es algo urgente o puedo agendarte una cita para hablar con él?"
-        },
-        {
-          "role": "user",
-          "content": "Uegente"
-        },
-        {
-          "role": "assistant",
-          "content": "Perfecto, le aviso a Roy ahora mismo 📞 Un momento."
-        },
-        {
-          "role": "user",
-          "content": "Gracias"
-        },
-        {
-          "role": "assistant",
-          "content": "¡De nada, Adrian! Si necesitas algo más, aquí estoy. 😊"
-        },
-        {
-          "role": "user",
-          "content": "No me escrinas mas."
-        },
-        {
-          "role": "assistant",
-          "content": "Entendido, Adrian. No te enviaré más mensajes. Si en algún momento necesitas ayuda, aquí estaré. ¡Cuídate!"
-        },
-        {
-          "role": "user",
-          "content": "Hola papa"
-        },
-        {
-          "role": "assistant",
-          "content": "¡Hola, Adrian! Soy Lucy, la asistente de Roy Mota. ¿En qué puedo ayudarte hoy?"
-        },
-        {
-          "role": "user",
-          "content": "No me escrinas mas."
-        },
-        {
-          "role": "assistant",
-          "content": "Entendido, Adrian. No te enviaré más mensajes. Si necesitas algo en el futuro, aquí estaré. ¡Cuídate!"
-        },
-        {
-          "role": "user",
-          "content": "¡HELLO!"
-        },
-        {
-          "role": "assistant",
-          "content": "¡Hola, Adrian! Soy Lucy, la asistente de Roy Mota. ¿Cómo puedo ayudarte hoy?"
-        },
-        {
-          "role": "user",
-          "content": "¿Puedo hablar con una especialista?"
-        },
-        {
-          "role": "assistant",
-          "content": "Con gusto te comunico con Roy 😊 ¿Es algo urgente o puedo agendarte una cita? ¿Sobre qué necesitas hablar con él?"
-        },
-        {
-          "role": "user",
-          "content": "Es urgente."
-        },
-        {
-          "role": "assistant",
-          "content": "Perfecto, le aviso a Roy ahora mismo 📞 Un momento."
-        }
-      ],
-      "rateLimits": {
-        "18329080095": [
-          1777169737957
-        ],
-        "14072835735": [
-          1777225455712,
-          1777225486828
-        ],
-        "584148531712": [
-          1777208413993
-        ],
-        "17864185619": [
-          1777210121923
-        ],
-        "16155467023": [
-          1777213544605
-        ],
-        "19545128581": [
-          1777226812785
-        ],
-        "19342469366": [
-          1777217545518
-        ],
-        "19017995511": [
-          1777225688729
-        ],
-        "13213459389": [
-          1777227713548,
-          1777227754170
-        ]
-      },
-      "18329080095": [
-        {
-          "role": "user",
-          "content": "[imagen/documento]"
-        },
-        {
-          "role": "assistant",
-          "content": "Gracias 😊 ¿Cómo puedo ayudarte hoy?"
-        }
-      ],
-      "14072835735": [
-        {
-          "role": "user",
-          "content": "Le podrías decir que me llame. Es urgente"
-        },
-        {
-          "role": "assistant",
-          "content": "Perfecto, le aviso a Roy ahora mismo 📞 Un momento."
-        },
-        {
-          "role": "user",
-          "content": "[imagen/documento]"
-        },
-        {
-          "role": "assistant",
-          "content": "Gracias 😊 ¿Cómo puedo ayudarte hoy?"
-        },
-        {
-          "role": "user",
-          "content": "[audio vacío]"
-        },
-        {
-          "role": "assistant",
-          "content": "Parece que no hay contenido en el audio. ¿Cómo puedo ayudarte hoy, Mota?"
-        },
-        {
-          "role": "user",
-          "content": "[audio no procesado]"
-        },
-        {
-          "role": "assistant",
-          "content": "Parece que no puedo procesar el audio. ¿Cómo puedo ayudarte hoy, Mota? 😊"
-        },
-        {
-          "role": "user",
-          "content": "Hola q"
-        },
-        {
-          "role": "assistant",
-          "content": "¡Hola, Mota! Soy Lucy. ¿Qué te trae por aquí hoy? ¿Es algo urgente o estás explorando opciones? 😊"
-        },
-        {
-          "role": "user",
-          "content": "Quiero una cita"
-        },
-        {
-          "role": "assistant",
-          "content": "¡Con gusto! Te mando el link para que elijas tu fecha y hora 📅"
-        },
-        {
-          "role": "user",
-          "content": "Me puede llamar Roy"
-        },
-        {
-          "role": "assistant",
-          "content": "Con gusto te comunico con Roy 😊 ¿Es algo urgente o puedo agendarte una cita? ¿Sobre qué necesitas hablar con él?"
-        },
-        {
-          "role": "user",
-          "content": "Urgente."
-        },
-        {
-          "role": "assistant",
-          "content": "Perfecto, le aviso a Roy ahora mismo 📞 Un momento."
-        },
-        {
-          "role": "user",
-          "content": "Hola"
-        },
-        {
-          "role": "assistant",
-          "content": "¡Hola, Mota! Soy Lucy. ¿Qué te trae por aquí hoy? ¿Es algo urgente o estás explorando opciones? 😊"
-        },
-        {
-          "role": "user",
-          "content": "Ok"
-        },
-        {
-          "role": "assistant",
-          "content": "¿Hay algo en específico en lo que pueda ayudarte hoy, Mota? 😊"
-        },
-        {
-          "role": "user",
-          "content": "[audio no procesado]: fetch is not defined"
-        },
-        {
-          "role": "assistant",
-          "content": "Parece que no puedo procesar el audio. ¿Cómo puedo ayudarte hoy, Mota? 😊"
-        },
-        {
-          "role": "user",
-          "content": "Hola"
-        },
-        {
-          "role": "assistant",
-          "content": "¡Hola, Mota! Soy Lucy. ¿Qué te trae por aquí hoy? ¿Es algo urgente o estás explorando opciones? 😊"
-        },
-        {
-          "role": "user",
-          "content": "Quiero una cita."
-        },
-        {
-          "role": "assistant",
-          "content": "¡Con gusto! ¿Qué día y hora te queda mejor para tu cita? 😊"
-        },
-        {
-          "role": "user",
-          "content": "[audio no procesado]: fetch is not defined"
-        },
-        {
-          "role": "assistant",
-          "content": "Parece que no puedo procesar el audio. ¿Cómo puedo ayudarte hoy, Mota? 😊"
-        },
-        {
-          "role": "user",
-          "content": "Lunes 10 de la mañana"
-        },
-        {
-          "role": "assistant",
-          "content": "¡Perfecto! Te agendo para el lunes a las 10 de la mañana.  ¡Te esperamos! 😊"
-        }
-      ],
-      "lastResponseFor": {
-        "14072835735": "3AA2F0D4F501FCEC2D5D",
-        "17864185619": "3A85B0EA9D7DD5730E8B",
-        "16155467023": "2A6AD0A55635C36F7AF1",
-        "19545128581": "3BE07DBADAABB2227A1D",
-        "19342469366": "3EB07ECB1E29550A308AA0",
-        "19017995511": "AC15F34618E8892AD2DBA194D2C98E19",
-        "13213459389": "3A358C2699200C87AADD"
-      },
-      "17864185619": [
-        {
-          "role": "user",
-          "content": "Papito como están todos hermanito ?"
-        },
-        {
-          "role": "assistant",
-          "content": "¡Hola Gabriela! Soy Lucy, la asistente de Roy. Estoy aquí para ayudarte. ¿Es algo urgente o estás explorando opciones? 😊"
-        }
-      ],
-      "19017995511": [
-        {
-          "role": "user",
-          "content": "Hola buenas tardes Roy, feliz domingo"
-        },
-        {
-          "role": "assistant",
-          "content": "¡Hola! Soy Lucy, la asistente de Roy. Espero que estés teniendo un buen día. ¿Con quién tengo el gusto? ¿Es algo urgente o estás explorando opciones?"
-        },
-        {
-          "role": "user",
-          "content": "Mañana te envío los I94, y social que los tengo en un correo que una vez te envie"
-        },
-        {
-          "role": "assistant",
-          "content": "Entiendo. ¿Hay algo específico en lo que te gustaría que te ayude hoy? Si prefieres, puedo agendar una cita para hablar más a fondo."
-        }
-      ]
-    }
-  },
-  "meta": null,
-  "pinData": null,
-  "versionId": "9ff367f2-8b11-496d-8ac7-f3934dcd2763",
-  "tags": []
+  "meta": {
+    "instanceId": ""
+  }
 }
